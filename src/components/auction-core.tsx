@@ -72,7 +72,7 @@ export default function AuctionCore() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex-shrink-0 border-b">
-        <div className="w-full relative aspect-video bg-muted rounded-t-lg overflow-hidden">
+        <div className="w-full relative h-64 bg-muted rounded-t-lg overflow-hidden">
         <Image
             src={currentPlayer.photoUrl}
             alt={currentPlayer.name}
@@ -126,29 +126,29 @@ export default function AuctionCore() {
             )}
         </CardContent>
       </ScrollArea>
-      <CardFooter className="bg-muted/50 p-6 mt-auto flex-shrink-0 border-t">
+      <CardFooter className="bg-muted/50 p-6 flex-shrink-0 border-t">
           {!playerAssigned ? (
           <div className="flex w-full gap-2">
               <Button onClick={handleAssignPlayer} className="w-full">
-              <Tag className="mr-2" />
+              <Tag className="mr-2 h-4 w-4" />
               Assign Player
               </Button>
               <Button onClick={handleSkipPlayer} variant="outline" className="w-full bg-background">
-              <SkipForward className="mr-2" />
+              <SkipForward className="mr-2 h-4 w-4" />
               Skip Player
               </Button>
-              <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
-                  <Undo className="mr-2" />
+              <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0) && !lastTransaction}>
+                  <Undo className="mr-2 h-4 w-4" />
                   Undo Last
               </Button>
           </div>
           ) : (
           <div className="flex w-full gap-2">
               <Button onClick={handleNextPlayer} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-              Next Player <ArrowRight className="ml-2" />
+              Next Player <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button onClick={handleEdit} variant="outline" className="w-full bg-background">
-                  <Edit className="mr-2" />
+                  <Edit className="mr-2 h-4 w-4" />
                   Edit
               </Button>
           </div>

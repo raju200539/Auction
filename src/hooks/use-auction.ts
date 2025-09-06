@@ -8,6 +8,7 @@ type AuctionContextType = {
   teams: Team[];
   players: PlayerWithId[];
   currentPlayerIndex: number;
+  lastTransaction: { teamId: number, player: PlayerWithId & { bidAmount: number } } | null;
   setTeams: (teams: Team[]) => void;
   setStage: (stage: AuctionStage) => void;
   setPlayers: (elite: Player[], normal: Player[]) => void;

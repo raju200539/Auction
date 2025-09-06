@@ -29,7 +29,18 @@ const getInitialState = () => {
   try {
     const storedState = localStorage.getItem('auction-state');
     if (storedState) {
-      return JSON.parse(storedState);
+      const parsedState = JSON.parse(storedState);
+      // Basic validation to ensure we don't crash on malformed data
+      if (parsedState && typeof parsedState === 'object') {
+        return {
+          stage: parsedState.stage || 'team-setup',
+          teams: parsedState.teams || [],
+          players: parsedState.players || [],
+          currentPlayerIndex: parsedState.currentPlayerIndex || 0,
+          unsoldPlayers: parsedState.unsoldPlayers || [],
+          lastTransaction: parsedState.lastTransaction || null,
+        };
+      }
     }
   } catch (error) {
     console.error("Failed to parse auction state from localStorage", error);
@@ -47,26 +58,41 @@ const getInitialState = () => {
 
 
 export function AuctionProvider({ children }: { children: ReactNode }) {
-  const [initialState] = useState(getInitialState);
-
-  const [stage, setStage] = useState<AuctionStage>(initialState.stage);
-  const [teams, setTeams] = useState<Team[]>(initialState.teams);
-  const [players, setPlayers] = useState<PlayerWithId[]>(initialState.players);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(initialState.currentPlayerIndex);
-  const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>(initialState.unsoldPlayers);
-  const [lastTransaction, setLastTransaction] = useState<{ teamId: number, player: PlayerWithId & { bidAmount: number } } | null>(initialState.lastTransaction);
+  const [initialStateLoaded, setInitialStateLoaded] = useState(false);
+  const [stage, setStage] = useState<AuctionStage>('team-setup');
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [players, setPlayers] = useState<PlayerWithId[]>([]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>([]);
+  const [lastTransaction, setLastTransaction] = useState<{ teamId: number, player: PlayerWithId & { bidAmount: number } } | null>(null);
 
   useEffect(() => {
-    const stateToSave = {
-      stage,
-      teams,
-      players,
-      currentPlayerIndex,
-      unsoldPlayers,
-      lastTransaction,
-    };
-    localStorage.setItem('auction-state', JSON.stringify(stateToSave));
-  }, [stage, teams, players, currentPlayerIndex, unsoldPlayers, lastTransaction]);
+    const state = getInitialState();
+    setStage(state.stage);
+    setTeams(state.teams);
+    setPlayers(state.players);
+    setCurrentPlayerIndex(state.currentPlayerIndex);
+    setUnsoldPlayers(state.unsoldPlayers);
+    setLastTransaction(state.lastTransaction);
+    setInitialStateLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!initialStateLoaded) return;
+    try {
+      const stateToSave = {
+        stage,
+        teams,
+        players,
+        currentPlayerIndex,
+        unsoldPlayers,
+        lastTransaction,
+      };
+      localStorage.setItem('auction-state', JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("Could not save auction state to localStorage", error);
+    }
+  }, [stage, teams, players, currentPlayerIndex, unsoldPlayers, lastTransaction, initialStateLoaded]);
 
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
@@ -108,6 +134,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     if (playerToSkip) {
       setUnsoldPlayers(prev => [...prev, playerToSkip]);
     }
+    setLastTransaction(null); // Skipping clears the last transaction
     nextPlayer(true);
   };
 
@@ -119,14 +146,21 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     } else {
         if (unsoldPlayers.length > 0) {
             setPlayers(prevPlayers => {
-              const soldPlayers = prevPlayers.slice(0, nextIndex).filter(p => teams.some(t => t.players.some(tp => tp.id === p.id)));
-              const shuffledUnsold = shuffleArray(unsoldPlayers);
-              const newPlayerList = [...soldPlayers, ...shuffledUnsold];
-              // Re-assign IDs to keep them unique and sequential in the new list
-              return newPlayerList.map((p, i) => ({ ...p, id: i }));
+              const soldPlayers = teams.flatMap(t => t.players);
+              const soldPlayerIds = new Set(soldPlayers.map(p => p.id));
+              const allUnsold = [...prevPlayers.filter(p => !soldPlayerIds.has(p.id)), ...unsoldPlayers];
+              const uniqueUnsold = Array.from(new Set(allUnsold.map(p => p.id))).map(id => allUnsold.find(p => p.id === id)!);
+              
+              const shuffledUnsold = shuffleArray(uniqueUnsold);
+              
+              // Re-ID all players to maintain list integrity
+              const newPlayerList = [...soldPlayers, ...shuffledUnsold].map((p, i) => ({...p, id: i}));
+              
+              setPlayers(newPlayerList);
+              setCurrentPlayerIndex(soldPlayers.length);
+              setUnsoldPlayers([]);
+              return newPlayerList;
             });
-            setCurrentPlayerIndex(teams.flatMap(t => t.players).length);
-            setUnsoldPlayers([]);
         } else {
             setStage('summary');
         }
@@ -157,7 +191,9 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   };
 
   const restartAuction = () => {
-    localStorage.removeItem('auction-state');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auction-state');
+    }
     setStage('team-setup');
     setTeams([]);
     setPlayers([]);
@@ -166,6 +202,10 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     setLastTransaction(null);
   };
 
+  if (!initialStateLoaded) {
+    return null; // Or a loading spinner
+  }
+
   return (
     <AuctionContext.Provider
       value={{
@@ -173,6 +213,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         teams,
         players,
         currentPlayerIndex,
+        lastTransaction,
         setTeams,
         setStage,
         setPlayers: handleSetPlayers,
