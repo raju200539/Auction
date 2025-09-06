@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
-import { Separator } from './ui/separator';
 
 export default function AuctionCore() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment } = useAuction();
@@ -56,10 +55,6 @@ export default function AuctionCore() {
     setPlayerAssigned(false);
     setBidAmount('');
     setSelectedTeamId(undefined);
-    toast({
-        title: "Player Skipped",
-        description: `${currentPlayer.name} has been moved to the end of the list.`,
-    });
   };
 
   if (!currentPlayer) {
@@ -74,94 +69,88 @@ export default function AuctionCore() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-      <Card className="overflow-hidden flex flex-col">
-        <CardHeader className="p-0">
-           <div className="w-full relative aspect-video bg-muted">
+    <Card className="h-full flex flex-col">
+        <CardHeader className="flex-shrink-0">
+            <div className="w-full relative aspect-video bg-muted rounded-t-lg overflow-hidden">
             <Image
-              src={currentPlayer.photoUrl}
-              alt={currentPlayer.name}
-              fill
-              className="object-cover"
-              data-ai-hint="player photo"
-              sizes="(max-width: 768px) 100vw, 50vw"
+                src={currentPlayer.photoUrl}
+                alt={currentPlayer.name}
+                fill
+                className="object-cover"
+                data-ai-hint="player photo"
+                sizes="(max-width: 768px) 100vw, 50vw"
             />
-          </div>
-          <div className="p-6">
-            <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
-            <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
-          </div>
+            </div>
+            <div className="pt-4">
+                <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
+                <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
+            </div>
         </CardHeader>
-        <CardContent className="p-6 pt-0 flex-grow">
+        <CardContent className="flex-grow overflow-y-auto p-6 pt-0">
             <div className="space-y-4">
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label htmlFor="team-select">Assign to Team</Label>
                 <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
-                  <SelectTrigger id="team-select" className="w-full">
+                    <SelectTrigger id="team-select" className="w-full">
                     <SelectValue placeholder="Select a team" />
-                  </SelectTrigger>
-                  <SelectContent>
+                    </SelectTrigger>
+                    <SelectContent>
                     {teams.map(team => (
-                      <SelectItem key={team.id} value={String(team.id)}>
+                        <SelectItem key={team.id} value={String(team.id)}>
                         {team.name} (Purse: {team.purse.toLocaleString()})
-                      </SelectItem>
+                        </SelectItem>
                     ))}
-                  </SelectContent>
+                    </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                 <Label htmlFor="bid-amount">Bid Amount</Label>
                 <Input
-                  id="bid-amount"
-                  type="number"
-                  placeholder="Enter bid amount"
-                  value={bidAmount}
-                  onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  disabled={playerAssigned}
+                    id="bid-amount"
+                    type="number"
+                    placeholder="Enter bid amount"
+                    value={bidAmount}
+                    onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                    disabled={playerAssigned}
                 />
-              </div>
+                </div>
             </div>
-             {playerAssigned && (
-              <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800">
+            {playerAssigned && (
+            <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800">
                 <p className="font-semibold text-green-800 dark:text-green-300">
-                  {currentPlayer.name} assigned to {teams.find(t => t.id === parseInt(selectedTeamId!))?.name} for {Number(bidAmount).toLocaleString()}.
+                {currentPlayer.name} assigned to {teams.find(t => t.id === parseInt(selectedTeamId!))?.name} for {Number(bidAmount).toLocaleString()}.
                 </p>
-              </div>
+            </div>
             )}
         </CardContent>
-         <CardFooter className="bg-muted/50 p-6 mt-auto">
-           {!playerAssigned ? (
-              <div className="flex w-full gap-2">
+        <CardFooter className="bg-muted/50 p-6 mt-auto flex-shrink-0">
+            {!playerAssigned ? (
+            <div className="flex w-full gap-2">
                 <Button onClick={handleAssignPlayer} className="w-full">
-                  <Tag className="mr-2" />
-                  Assign Player
+                <Tag className="mr-2" />
+                Assign Player
                 </Button>
                 <Button onClick={handleSkipPlayer} variant="outline" className="w-full bg-background">
-                  <SkipForward className="mr-2" />
-                  Skip Player
+                <SkipForward className="mr-2" />
+                Skip Player
                 </Button>
-                 <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
+                <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
                     <Undo className="mr-2" />
                     Undo Last
                 </Button>
-              </div>
-           ) : (
-             <div className="flex w-full gap-2">
+            </div>
+            ) : (
+            <div className="flex w-full gap-2">
                 <Button onClick={handleNextPlayer} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                  Next Player <ArrowRight className="ml-2" />
+                Next Player <ArrowRight className="ml-2" />
                 </Button>
                 <Button onClick={handleEdit} variant="outline" className="w-full bg-background">
                     <Edit className="mr-2" />
                     Edit
                 </Button>
             </div>
-           )}
-         </CardFooter>
-      </Card>
-
-      <div className="flex items-center justify-center">
-        {/* The confirmation card has been removed as per the user's request. */}
-      </div>
-    </div>
+            )}
+        </CardFooter>
+    </Card>
   );
 }

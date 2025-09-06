@@ -9,7 +9,7 @@ export default function AuctionView() {
       <aside className="w-full md:w-72 lg:w-80 flex-shrink-0 h-full">
         <TeamSidebar />
       </aside>
-      <main className="flex-grow min-w-0 h-full overflow-y-auto">
+      <main className="flex-grow min-w-0 h-full">
         <AuctionCore />
       </main>
     </div>
