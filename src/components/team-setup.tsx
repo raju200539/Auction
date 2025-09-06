@@ -19,16 +19,15 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = error => reject(error);
   });
 
-const NUM_TEAMS = 4;
-
 export default function TeamSetup() {
   const { setTeams: setAuctionTeams, startAuction } = useAuction();
   const { toast } = useToast();
+  const [numTeams, setNumTeams] = useState(4);
   const [teams, setTeams] = useState<Partial<Team>[]>([]);
 
   useEffect(() => {
-    setTeams(Array.from({ length: NUM_TEAMS }, (_, i) => ({ id: i })));
-  }, []);
+    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i })));
+  }, [numTeams]);
 
   const handleTeamDataChange = (index: number, field: keyof Team, value: string | number) => {
     const newTeams = [...teams];
@@ -45,11 +44,11 @@ export default function TeamSetup() {
   };
 
   const isFormComplete = useMemo(() => {
-    if (teams.length !== NUM_TEAMS) return false;
+    if (teams.length === 0 || teams.length !== numTeams) return false;
     return teams.every(
       team => team.name && team.logo && team.initialPurse && team.initialPurse > 0
     );
-  }, [teams]);
+  }, [teams, numTeams]);
 
   const handleSubmit = () => {
     if (!isFormComplete) {
@@ -77,18 +76,29 @@ export default function TeamSetup() {
 
   return (
     <div className="flex justify-center items-start w-full">
-      <Card className="w-full max-w-5xl">
+      <Card className="w-full max-w-7xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">
             <Users className="h-6 w-6" /> Team Setup
           </CardTitle>
           <CardDescription>
-            Enter the details for the 4 teams: names, logos, and starting purse amount.
+            Enter the number of teams, then their details, logos, and starting purse amount.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
+            <div className="max-w-xs space-y-2">
+                <Label htmlFor="num-teams">Number of Teams</Label>
+                <Input
+                    id="num-teams"
+                    type="number"
+                    value={numTeams}
+                    onChange={(e) => setNumTeams(parseInt(e.target.value) || 0)}
+                    min="1"
+                    placeholder="Enter number of teams"
+                />
+            </div>
           {teams.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {teams.map((team, index) => (
                 <Card key={index} className="p-4 space-y-4">
                   <div className="flex items-center gap-4">
@@ -117,7 +127,7 @@ export default function TeamSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`team-purse-${index}`} className='flex items-center gap-2'><Wallet className='h-4 w-4' /> Initial Purse</Label>
+                    <Label htmlFor={`team-purse-${index}`} className='flex items-center gap-2'><Wallet className='h-4 w-4' /> Initial Purse</Label>                    
                     <Input
                       id={`team-purse-${index}`}
                       type="number"
