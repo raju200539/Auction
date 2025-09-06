@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, type ChangeEvent, useMemo, useEffect } from 'react';
+import { useState, type ChangeEvent, useMemo } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Image as ImageIcon, Wallet } from 'lucide-react';
+import { Users, Image as ImageIcon, Wallet, ArrowLeft } from 'lucide-react';
 import type { Team } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -19,54 +20,95 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = error => reject(error);
   });
 
+type Step = 'config' | 'details';
+
 export default function TeamSetup() {
   const { setTeams: setAuctionTeams, startAuction } = useAuction();
   const { toast } = useToast();
+  
+  const [step, setStep] = useState<Step>('config');
   const [numTeams, setNumTeams] = useState(4);
+  const [initialPurse, setInitialPurse] = useState(100000);
   const [teams, setTeams] = useState<Partial<Team>[]>([]);
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
 
-  useEffect(() => {
-    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i })));
-  }, [numTeams]);
-
-  const handleTeamDataChange = (index: number, field: keyof Team, value: string | number) => {
+  const handleTeamDataChange = (field: keyof Team, value: string | number) => {
     const newTeams = [...teams];
-    newTeams[index] = { ...newTeams[index], [field]: value };
+    const currentTeam = newTeams[currentTeamIndex] || { id: currentTeamIndex };
+    newTeams[currentTeamIndex] = { ...currentTeam, [field]: value };
     setTeams(newTeams);
   };
 
-  const handleLogoUpload = async (index: number, e: ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const base64Logo = await fileToBase64(file);
-      handleTeamDataChange(index, 'logo', base64Logo);
+      try {
+        const base64Logo = await fileToBase64(file);
+        handleTeamDataChange('logo', base64Logo);
+      } catch (error) {
+        toast({
+          title: "Logo Upload Failed",
+          description: "There was an error converting the image.",
+          variant: "destructive",
+        });
+      }
     }
   };
+  
+  const handleStartDetails = () => {
+    if (numTeams <= 0 || initialPurse <= 0) {
+        toast({
+            title: "Invalid Configuration",
+            description: "Please enter a valid number of teams and initial purse.",
+            variant: "destructive",
+        });
+        return;
+    }
+    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i })));
+    setCurrentTeamIndex(0);
+    setStep('details');
+  };
 
-  const isFormComplete = useMemo(() => {
-    if (teams.length === 0 || teams.length !== numTeams) return false;
-    return teams.every(
-      team => team.name && team.logo && team.initialPurse && team.initialPurse > 0
-    );
-  }, [teams, numTeams]);
-
-  const handleSubmit = () => {
-    if (!isFormComplete) {
-       toast({
-        title: "Incomplete Setup",
-        description: "Please fill in all details for every team.",
+  const handleNextTeam = () => {
+    const currentTeam = teams[currentTeamIndex];
+    if (!currentTeam?.name || !currentTeam?.logo) {
+      toast({
+        title: "Incomplete Details",
+        description: "Please provide a name and logo for the current team.",
         variant: "destructive",
       });
       return;
     }
+    setCurrentTeamIndex(prev => prev + 1);
+  };
+  
+  const handleBack = () => {
+      if (currentTeamIndex > 0) {
+          setCurrentTeamIndex(prev => prev -1);
+      } else {
+          setStep('config');
+      }
+  }
+
+  const handleFinishSetup = () => {
+    const currentTeam = teams[currentTeamIndex];
+    if (!currentTeam?.name || !currentTeam?.logo) {
+      toast({
+        title: "Incomplete Details",
+        description: "Please provide a name and logo for the final team.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const finalTeams = teams.map(
       (team, index) =>
         ({
           id: index,
           name: team.name!,
           logo: team.logo!,
-          initialPurse: team.initialPurse!,
-          purse: team.initialPurse!,
+          initialPurse: initialPurse,
+          purse: initialPurse,
           players: [],
         } as Team)
     );
@@ -74,81 +116,107 @@ export default function TeamSetup() {
     startAuction();
   };
 
+  const currentTeam = teams[currentTeamIndex];
+  const isFinalTeam = currentTeamIndex === numTeams - 1;
+
+  if (step === 'config') {
+    return (
+       <div className="flex justify-center items-start w-full">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                        <Users className="h-6 w-6" /> Initial Setup
+                    </CardTitle>
+                    <CardDescription>
+                        First, let's set the basic parameters for your auction.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="num-teams">Number of Teams</Label>
+                        <Input
+                            id="num-teams"
+                            type="number"
+                            value={numTeams}
+                            onChange={(e) => setNumTeams(parseInt(e.target.value) || 0)}
+                            min="1"
+                            placeholder="e.g., 4"
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="initial-purse"><Wallet className='inline-block mr-2 h-4 w-4' />Initial Purse (for all teams)</Label>                    
+                        <Input
+                            id="initial-purse"
+                            type="number"
+                            value={initialPurse || ''}
+                            onChange={e => setInitialPurse(parseInt(e.target.value, 10) || 0)}
+                            placeholder="e.g., 100000"
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleStartDetails} size="lg">
+                        Next: Enter Team Details
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+  }
+
   return (
     <div className="flex justify-center items-start w-full">
-      <Card className="w-full max-w-7xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <Users className="h-6 w-6" /> Team Setup
-          </CardTitle>
-          <CardDescription>
-            Enter the number of teams, then their details, logos, and starting purse amount.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8">
-            <div className="max-w-xs space-y-2">
-                <Label htmlFor="num-teams">Number of Teams</Label>
-                <Input
-                    id="num-teams"
-                    type="number"
-                    value={numTeams}
-                    onChange={(e) => setNumTeams(parseInt(e.target.value) || 0)}
-                    min="1"
-                    placeholder="Enter number of teams"
-                />
-            </div>
-          {teams.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-              {teams.map((team, index) => (
-                <Card key={index} className="p-4 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={team.logo} alt={team.name} />
-                      <AvatarFallback>{team.name ? team.name.charAt(0) : index + 1}</AvatarFallback>
+        <Card className="w-full max-w-md">
+            <CardHeader>
+                 <Button variant="ghost" size="sm" className="absolute top-4 left-4 text-muted-foreground" onClick={handleBack}>
+                    <ArrowLeft className="mr-2" /> Back
+                </Button>
+                <CardTitle className="flex items-center justify-center gap-2 text-2xl pt-8">
+                    <Users className="h-6 w-6" /> Team Details
+                </CardTitle>
+                 <CardDescription className="text-center">
+                    Enter the details for Team {currentTeamIndex + 1} of {numTeams}.
+                </CardDescription>
+                <Progress value={((currentTeamIndex + 1) / numTeams) * 100} className="w-full mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+                 <div className="flex justify-center">
+                    <Avatar className="h-24 w-24 border-4 border-muted">
+                      <AvatarImage src={currentTeam?.logo} alt={currentTeam?.name} />
+                      <AvatarFallback>{currentTeam?.name ? currentTeam.name.charAt(0) : currentTeamIndex + 1}</AvatarFallback>
                     </Avatar>
-                    <h3 className="text-xl font-semibold">Team {index + 1}</h3>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`team-name-${index}`}>Team Name</Label>
+                 <div className="space-y-2">
+                    <Label htmlFor="team-name">Team Name</Label>
                     <Input
-                      id={`team-name-${index}`}
-                      value={team.name || ''}
-                      onChange={e => handleTeamDataChange(index, 'name', e.target.value)}
+                      id="team-name"
+                      value={currentTeam?.name || ''}
+                      onChange={e => handleTeamDataChange('name', e.target.value)}
                       placeholder="Enter team name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`team-logo-${index}`} className='flex items-center gap-2'><ImageIcon className='h-4 w-4' /> Team Logo</Label>
+                    <Label htmlFor="team-logo" className='flex items-center gap-2'><ImageIcon className='h-4 w-4' /> Team Logo</Label>
                     <Input
-                      id={`team-logo-${index}`}
+                      id="team-logo"
                       type="file"
                       accept="image/*"
-                      onChange={e => handleLogoUpload(index, e)}
+                      onChange={handleLogoUpload}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`team-purse-${index}`} className='flex items-center gap-2'><Wallet className='h-4 w-4' /> Initial Purse</Label>                    
-                    <Input
-                      id={`team-purse-${index}`}
-                      type="number"
-                      value={team.initialPurse || ''}
-                      onChange={e =>
-                        handleTeamDataChange(index, 'initialPurse', parseInt(e.target.value, 10) || 0)
-                      }
-                      placeholder="e.g., 100000"
-                    />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleSubmit} disabled={!isFormComplete || teams.length === 0} size="lg">
-            Next: Upload Players
-          </Button>
-        </CardFooter>
-      </Card>
+            </CardContent>
+            <CardFooter>
+                {isFinalTeam ? (
+                    <Button onClick={handleFinishSetup} size="lg" className="w-full">
+                        Finish Setup & Upload Players
+                    </Button>
+                ) : (
+                    <Button onClick={handleNextTeam} size="lg" className="w-full">
+                        Next Team
+                    </Button>
+                )}
+            </CardFooter>
+        </Card>
     </div>
   );
 }
