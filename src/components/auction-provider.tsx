@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode, useCallback } from 'react';
+import { useState, type ReactNode, useCallback, useEffect } from 'react';
 import type { AuctionStage, Player, PlayerWithId, Team } from '@/types';
 import { AuctionContext } from '@/hooks/use-auction';
 
@@ -14,13 +14,60 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
+const getInitialState = () => {
+  if (typeof window === 'undefined') {
+    return {
+        stage: 'team-setup' as AuctionStage,
+        teams: [] as Team[],
+        players: [] as PlayerWithId[],
+        currentPlayerIndex: 0,
+        unsoldPlayers: [] as PlayerWithId[],
+        lastTransaction: null as { teamId: number, player: PlayerWithId & { bidAmount: number } } | null,
+    };
+  }
+
+  try {
+    const storedState = localStorage.getItem('auction-state');
+    if (storedState) {
+      return JSON.parse(storedState);
+    }
+  } catch (error) {
+    console.error("Failed to parse auction state from localStorage", error);
+  }
+
+  return {
+    stage: 'team-setup' as AuctionStage,
+    teams: [] as Team[],
+    players: [] as PlayerWithId[],
+    currentPlayerIndex: 0,
+    unsoldPlayers: [] as PlayerWithId[],
+    lastTransaction: null as { teamId: number, player: PlayerWithId & { bidAmount: number } } | null,
+  };
+};
+
+
 export function AuctionProvider({ children }: { children: ReactNode }) {
-  const [stage, setStage] = useState<AuctionStage>('team-setup');
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [players, setPlayers] = useState<PlayerWithId[]>([]);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>([]);
-  const [lastTransaction, setLastTransaction] = useState<{ teamId: number, player: PlayerWithId & { bidAmount: number } } | null>(null);
+  const [initialState] = useState(getInitialState);
+
+  const [stage, setStage] = useState<AuctionStage>(initialState.stage);
+  const [teams, setTeams] = useState<Team[]>(initialState.teams);
+  const [players, setPlayers] = useState<PlayerWithId[]>(initialState.players);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(initialState.currentPlayerIndex);
+  const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>(initialState.unsoldPlayers);
+  const [lastTransaction, setLastTransaction] = useState<{ teamId: number, player: PlayerWithId & { bidAmount: number } } | null>(initialState.lastTransaction);
+
+  useEffect(() => {
+    const stateToSave = {
+      stage,
+      teams,
+      players,
+      currentPlayerIndex,
+      unsoldPlayers,
+      lastTransaction,
+    };
+    localStorage.setItem('auction-state', JSON.stringify(stateToSave));
+  }, [stage, teams, players, currentPlayerIndex, unsoldPlayers, lastTransaction]);
+
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
@@ -74,7 +121,9 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
             setPlayers(prevPlayers => {
               const soldPlayers = prevPlayers.slice(0, nextIndex).filter(p => teams.some(t => t.players.some(tp => tp.id === p.id)));
               const shuffledUnsold = shuffleArray(unsoldPlayers);
-              return [...soldPlayers, ...shuffledUnsold];
+              const newPlayerList = [...soldPlayers, ...shuffledUnsold];
+              // Re-assign IDs to keep them unique and sequential in the new list
+              return newPlayerList.map((p, i) => ({ ...p, id: i }));
             });
             setCurrentPlayerIndex(teams.flatMap(t => t.players).length);
             setUnsoldPlayers([]);
@@ -108,12 +157,13 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   };
 
   const restartAuction = () => {
+    localStorage.removeItem('auction-state');
+    setStage('team-setup');
     setTeams([]);
     setPlayers([]);
     setCurrentPlayerIndex(0);
     setUnsoldPlayers([]);
     setLastTransaction(null);
-    setStage('team-setup');
   };
 
   return (
