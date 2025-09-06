@@ -1,9 +1,8 @@
 'use client';
 
-import AuctionCore from '@/components/auction-core';
+import AuctionControls from '@/components/auction-controls';
+import PlayerDisplay from '@/components/player-display';
 import TeamSidebar from '@/components/team-sidebar';
-import AuctionControls from './auction-controls';
-import PlayerDisplay from './player-display';
 
 export default function AuctionView() {
   return (
@@ -12,11 +11,11 @@ export default function AuctionView() {
         <TeamSidebar />
       </aside>
       <main className="flex-grow min-w-0 md:h-full grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="h-full">
-            <AuctionControls />
-        </div>
         <div className="h-full hidden xl:block">
             <PlayerDisplay />
+        </div>
+        <div className="h-full">
+            <AuctionControls />
         </div>
       </main>
     </div>
