@@ -52,7 +52,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
 
   return (
     <div className="space-y-2">
-      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/20 shadow-lg">
+      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/20 shadow-lg font-body">
         <div className="relative aspect-[3/4] bg-muted">
           <Image
             src={player.photoUrl}
