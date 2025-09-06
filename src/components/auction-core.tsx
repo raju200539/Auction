@@ -9,12 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag, SkipForward, CheckCircle } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 export default function AuctionCore() {
-  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer } = useAuction();
+  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment } = useAuction();
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
@@ -22,7 +21,7 @@ export default function AuctionCore() {
 
   const currentPlayer = players[currentPlayerIndex];
 
-  const handleAssignPlayer = async () => {
+  const handleAssignPlayer = () => {
     if (!selectedTeamId || bidAmount === '' || bidAmount <= 0) {
       toast({ title: 'Invalid Bid', description: 'Please select a team and enter a valid bid amount.', variant: 'destructive' });
       return;
@@ -40,6 +39,11 @@ export default function AuctionCore() {
     setPlayerAssigned(true);
   };
   
+  const handleEdit = () => {
+    undoLastAssignment();
+    setPlayerAssigned(false);
+  };
+
   const handleNextPlayer = () => {
     nextPlayer();
     setPlayerAssigned(false);
@@ -69,8 +73,6 @@ export default function AuctionCore() {
     );
   }
 
-  const assignedTeam = teams.find(t => t.id === parseInt(selectedTeamId || ''));
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
       <Card className="overflow-hidden flex flex-col">
@@ -91,90 +93,74 @@ export default function AuctionCore() {
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-0 flex-grow">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="team-select">Assign to Team</Label>
-              <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
-                <SelectTrigger id="team-select" className="w-full">
-                  <SelectValue placeholder="Select a team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teams.map(team => (
-                    <SelectItem key={team.id} value={String(team.id)}>
-                      {team.name} (Purse: {team.purse.toLocaleString()})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="team-select">Assign to Team</Label>
+                <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
+                  <SelectTrigger id="team-select" className="w-full">
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map(team => (
+                      <SelectItem key={team.id} value={String(team.id)}>
+                        {team.name} (Purse: {team.purse.toLocaleString()})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bid-amount">Bid Amount</Label>
+                <Input
+                  id="bid-amount"
+                  type="number"
+                  placeholder="Enter bid amount"
+                  value={bidAmount}
+                  onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                  disabled={playerAssigned}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="bid-amount">Bid Amount</Label>
-              <Input
-                id="bid-amount"
-                type="number"
-                placeholder="Enter bid amount"
-                value={bidAmount}
-                onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                disabled={playerAssigned}
-              />
-            </div>
-          </div>
+             {playerAssigned && (
+              <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800">
+                <p className="font-semibold text-green-800 dark:text-green-300">
+                  {currentPlayer.name} assigned to {teams.find(t => t.id === parseInt(selectedTeamId!))?.name} for {Number(bidAmount).toLocaleString()}.
+                </p>
+              </div>
+            )}
         </CardContent>
          <CardFooter className="bg-muted/50 p-6 mt-auto">
-            <div className="flex w-full gap-2">
-              <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
-                <Tag className="mr-2" />
-                Assign Player
-              </Button>
-              <Button onClick={handleSkipPlayer} disabled={playerAssigned} variant="outline" className="w-full bg-background">
-                <SkipForward className="mr-2" />
-                Skip Player
-              </Button>
+           {!playerAssigned ? (
+              <div className="flex w-full gap-2">
+                <Button onClick={handleAssignPlayer} className="w-full">
+                  <Tag className="mr-2" />
+                  Assign Player
+                </Button>
+                <Button onClick={handleSkipPlayer} variant="outline" className="w-full bg-background">
+                  <SkipForward className="mr-2" />
+                  Skip Player
+                </Button>
+                 <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
+                    <Undo className="mr-2" />
+                    Undo Last
+                </Button>
+              </div>
+           ) : (
+             <div className="flex w-full gap-2">
+                <Button onClick={handleNextPlayer} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                  Next Player <ArrowRight className="ml-2" />
+                </Button>
+                <Button onClick={handleEdit} variant="outline" className="w-full bg-background">
+                    <Edit className="mr-2" />
+                    Edit
+                </Button>
             </div>
+           )}
          </CardFooter>
       </Card>
 
       <div className="flex items-center justify-center">
-        {playerAssigned && assignedTeam && (
-            <Card className="border-green-500 bg-green-50 dark:bg-green-950/50 w-full max-w-md">
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-                <CardTitle className="text-2xl text-green-800 dark:text-green-300">Player Sold!</CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className='flex items-center gap-4'>
-                    <Avatar className="h-16 w-16 border">
-                    <AvatarImage src={currentPlayer.photoUrl} alt={currentPlayer.name} />
-                    <AvatarFallback>{currentPlayer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="text-lg font-semibold">{currentPlayer.name}</p>
-                        <p className='text-muted-foreground'>Sold to {assignedTeam.name}</p>
-                    </div>
-                </div>
-                <Separator />
-                <div className='flex justify-between items-center'>
-                    <div className="text-sm text-muted-foreground">Winning Bid</div>
-                    <div className="text-2xl font-bold text-primary">
-                    {Number(bidAmount).toLocaleString()}
-                    </div>
-                </div>
-                <div className='flex justify-between items-center'>
-                    <div className="text-sm text-muted-foreground">{assignedTeam.name}'s Remaining Purse</div>
-                    <div className="text-lg font-semibold">
-                    {(assignedTeam.purse).toLocaleString()}
-                    </div>
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
-                Next Player <ArrowRight className="ml-2" />
-                </Button>
-            </CardFooter>
-            </Card>
-        )}
+        {/* The confirmation card has been removed as per the user's request. */}
       </div>
     </div>
   );

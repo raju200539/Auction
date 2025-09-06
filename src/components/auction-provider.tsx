@@ -20,6 +20,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<PlayerWithId[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>([]);
+  const [lastTransaction, setLastTransaction] = useState<{ teamId: number, player: PlayerWithId & { bidAmount: number } } | null>(null);
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
@@ -34,6 +35,9 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   const assignPlayer = (teamId: number, bidAmount: number) => {
     const playerToAssign = players[currentPlayerIndex];
     if (!playerToAssign) return;
+    
+    const assignedPlayer = { ...playerToAssign, bidAmount };
+    setLastTransaction({ teamId, player: assignedPlayer });
 
     setTeams(prevTeams =>
       prevTeams.map(team => {
@@ -43,7 +47,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
             purse: team.purse - bidAmount,
             players: [
               ...team.players,
-              { ...playerToAssign, bidAmount },
+              assignedPlayer,
             ],
           };
         }
@@ -67,17 +71,37 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         setCurrentPlayerIndex(nextIndex);
     } else {
         if (unsoldPlayers.length > 0) {
-            const currentPlayers = players.slice(0, nextIndex);
-            const shuffledUnsold = shuffleArray(unsoldPlayers);
-            // Rebuild the player list, keeping sold players and adding the shuffled unsold ones.
-            setPlayers([...currentPlayers, ...shuffledUnsold]);
+            setPlayers(prevPlayers => {
+              const soldPlayers = prevPlayers.slice(0, nextIndex).filter(p => teams.some(t => t.players.some(tp => tp.id === p.id)));
+              const shuffledUnsold = shuffleArray(unsoldPlayers);
+              return [...soldPlayers, ...shuffledUnsold];
+            });
+            setCurrentPlayerIndex(teams.flatMap(t => t.players).length);
             setUnsoldPlayers([]);
-            setCurrentPlayerIndex(nextIndex);
         } else {
             setStage('summary');
         }
     }
-};
+  };
+
+  const undoLastAssignment = () => {
+    if (!lastTransaction) return;
+
+    const { teamId, player } = lastTransaction;
+
+    setTeams(prevTeams => prevTeams.map(team => {
+        if (team.id === teamId) {
+            return {
+                ...team,
+                purse: team.purse + player.bidAmount,
+                players: team.players.filter(p => p.id !== player.id)
+            };
+        }
+        return team;
+    }));
+
+    setLastTransaction(null);
+  };
 
   const startAuction = () => {
     setStage('player-upload');
@@ -88,6 +112,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     setPlayers([]);
     setCurrentPlayerIndex(0);
     setUnsoldPlayers([]);
+    setLastTransaction(null);
     setStage('team-setup');
   };
 
@@ -106,6 +131,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         nextPlayer,
         startAuction,
         restartAuction,
+        undoLastAssignment,
       }}
     >
       {children}

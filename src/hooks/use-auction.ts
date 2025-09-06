@@ -16,6 +16,7 @@ type AuctionContextType = {
   nextPlayer: (isSkip?: boolean) => void;
   startAuction: () => void;
   restartAuction: () => void;
+  undoLastAssignment: () => void;
 };
 
 export const AuctionContext = createContext<AuctionContextType | null>(null);
