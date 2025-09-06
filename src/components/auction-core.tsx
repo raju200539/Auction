@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionCore() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment } = useAuction();
@@ -59,7 +60,7 @@ export default function AuctionCore() {
 
   if (!currentPlayer) {
     return (
-      <Card>
+      <Card className="h-full flex items-center justify-center">
         <CardHeader>
           <CardTitle>No Players Left</CardTitle>
           <CardDescription>All players have been auctioned.</CardDescription>
@@ -70,23 +71,24 @@ export default function AuctionCore() {
 
   return (
     <Card className="h-full flex flex-col">
-        <CardHeader className="flex-shrink-0">
-            <div className="w-full relative aspect-video bg-muted rounded-t-lg overflow-hidden">
-            <Image
-                src={currentPlayer.photoUrl}
-                alt={currentPlayer.name}
-                fill
-                className="object-cover"
-                data-ai-hint="player photo"
-                sizes="(max-width: 768px) 100vw, 50vw"
-            />
-            </div>
-            <div className="pt-4">
-                <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
-                <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
-            </div>
-        </CardHeader>
-        <CardContent className="flex-grow overflow-y-auto p-6 pt-0">
+      <CardHeader className="flex-shrink-0 border-b">
+        <div className="w-full relative aspect-video bg-muted rounded-t-lg overflow-hidden">
+        <Image
+            src={currentPlayer.photoUrl}
+            alt={currentPlayer.name}
+            fill
+            className="object-cover"
+            data-ai-hint="player photo"
+            sizes="(max-width: 768px) 100vw, 50vw"
+        />
+        </div>
+        <div className="pt-4">
+            <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
+            <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
+        </div>
+      </CardHeader>
+      <ScrollArea className="flex-grow">
+        <CardContent className="p-6">
             <div className="space-y-4">
                 <div className="space-y-2">
                 <Label htmlFor="team-select">Assign to Team</Label>
@@ -123,34 +125,35 @@ export default function AuctionCore() {
             </div>
             )}
         </CardContent>
-        <CardFooter className="bg-muted/50 p-6 mt-auto flex-shrink-0">
-            {!playerAssigned ? (
-            <div className="flex w-full gap-2">
-                <Button onClick={handleAssignPlayer} className="w-full">
-                <Tag className="mr-2" />
-                Assign Player
-                </Button>
-                <Button onClick={handleSkipPlayer} variant="outline" className="w-full bg-background">
-                <SkipForward className="mr-2" />
-                Skip Player
-                </Button>
-                <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
-                    <Undo className="mr-2" />
-                    Undo Last
-                </Button>
-            </div>
-            ) : (
-            <div className="flex w-full gap-2">
-                <Button onClick={handleNextPlayer} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                Next Player <ArrowRight className="ml-2" />
-                </Button>
-                <Button onClick={handleEdit} variant="outline" className="w-full bg-background">
-                    <Edit className="mr-2" />
-                    Edit
-                </Button>
-            </div>
-            )}
-        </CardFooter>
+      </ScrollArea>
+      <CardFooter className="bg-muted/50 p-6 mt-auto flex-shrink-0 border-t">
+          {!playerAssigned ? (
+          <div className="flex w-full gap-2">
+              <Button onClick={handleAssignPlayer} className="w-full">
+              <Tag className="mr-2" />
+              Assign Player
+              </Button>
+              <Button onClick={handleSkipPlayer} variant="outline" className="w-full bg-background">
+              <SkipForward className="mr-2" />
+              Skip Player
+              </Button>
+              <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0)}>
+                  <Undo className="mr-2" />
+                  Undo Last
+              </Button>
+          </div>
+          ) : (
+          <div className="flex w-full gap-2">
+              <Button onClick={handleNextPlayer} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+              Next Player <ArrowRight className="ml-2" />
+              </Button>
+              <Button onClick={handleEdit} variant="outline" className="w-full bg-background">
+                  <Edit className="mr-2" />
+                  Edit
+              </Button>
+          </div>
+          )}
+      </CardFooter>
     </Card>
   );
 }

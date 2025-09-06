@@ -10,7 +10,7 @@ export default function TeamSidebar() {
   const { teams } = useAuction();
 
   return (
-    <Card className="sticky top-8 h-full flex flex-col">
+    <Card className="md:sticky md:top-8 h-full flex flex-col max-h-[calc(100vh-4rem)]">
       <CardHeader>
         <CardTitle>Teams Dashboard</CardTitle>
       </CardHeader>
