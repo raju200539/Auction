@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Player, Team } from '@/types';
 import { toPng } from 'html-to-image';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -36,35 +36,40 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
 
   return (
     <div className="space-y-2">
-      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground">
+      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/20 shadow-lg">
         <div className="relative aspect-[3/4] bg-muted">
           <Image
             src={player.photoUrl}
             alt={player.name}
             fill
-            className="object-cover"
+            className="object-cover object-top"
             unoptimized // Use unoptimized for html-to-image to prevent using WebP
           />
           <div
-            className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent"
+            className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/70 to-transparent"
           />
-          <div className="absolute bottom-4 left-4 text-white">
-            <p className="text-sm font-light uppercase tracking-widest">{player.position}</p>
-            <h3 className="text-2xl font-bold">{player.name}</h3>
+           <div className="absolute top-2 right-2 bg-primary/80 backdrop-blur-sm text-primary-foreground text-xs font-bold uppercase px-2 py-1 rounded-full">
+            {player.position}
+          </div>
+          <div className="absolute bottom-0 left-0 p-4 text-white w-full">
+            <h3 className="text-3xl font-extrabold tracking-tight drop-shadow-lg">{player.name}</h3>
           </div>
         </div>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-4 bg-background">
           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
+             <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border-2 border-muted">
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">{team.name}</span>
+                <div className='flex flex-col'>
+                    <span className="text-xs text-muted-foreground">Sold To</span>
+                    <span className="text-sm font-bold">{team.name}</span>
+                </div>
               </div>
               <div className="flex flex-col items-end">
-                  <span className="text-xs text-muted-foreground">Sold For</span>
-                  <span className="font-bold text-lg text-primary">{player.bidAmount.toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">Winning Bid</span>
+                  <span className="font-bold text-xl text-primary">{player.bidAmount.toLocaleString()}</span>
               </div>
           </div>
         </CardContent>

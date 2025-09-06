@@ -14,11 +14,16 @@ export default function AuctionSummary() {
   const [activeTab, setActiveTab] = useState('team-summary');
 
   const exportTeamSummaryToCsv = () => {
-    let csvContent = "Team Name,Total Spent,Remaining Purse,Players Bought\n";
+    let csvContent = "Team Name,Total Spent,Remaining Purse,Player Name,Bid Amount\n";
     teams.forEach(team => {
       const totalSpent = team.initialPurse - team.purse;
-      const playersList = team.players.map(p => `${p.name} (${p.bidAmount.toLocaleString()})`).join('; ');
-      csvContent += `"${team.name}",${totalSpent},${team.purse},"${playersList}"\n`;
+      if (team.players.length === 0) {
+        csvContent += `"${team.name}",${totalSpent},${team.purse},N/A,0\n`;
+      } else {
+        team.players.forEach(player => {
+          csvContent += `"${team.name}",${totalSpent},${team.purse},"${player.name}",${player.bidAmount}\n`;
+        });
+      }
     });
 
     downloadCsv(csvContent, 'team_summary.csv');

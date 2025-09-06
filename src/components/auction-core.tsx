@@ -38,7 +38,6 @@ export default function AuctionCore() {
 
     assignPlayer(team.id, bidAmount);
     setPlayerAssigned(true);
-    toast({ title: 'Player Assigned!', description: `${currentPlayer.name} sold to ${team.name} for ${bidAmount.toLocaleString()}.` });
   };
   
   const handleNextPlayer = () => {
@@ -53,7 +52,6 @@ export default function AuctionCore() {
     setPlayerAssigned(false);
     setBidAmount('');
     setSelectedTeamId(undefined);
-    toast({ title: 'Player Skipped', description: `${currentPlayer.name} will be moved to the end of the auction list.` });
   };
 
   if (!currentPlayer) {
