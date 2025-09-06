@@ -13,7 +13,7 @@ import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionCore() {
-  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment } = useAuction();
+  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
@@ -137,7 +137,7 @@ export default function AuctionCore() {
               <SkipForward className="mr-2 h-4 w-4" />
               Skip Player
               </Button>
-              <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!teams.some(t => t.players.length > 0) && !lastTransaction}>
+              <Button onClick={undoLastAssignment} variant="outline" className="w-full bg-background" disabled={!lastTransaction}>
                   <Undo className="mr-2 h-4 w-4" />
                   Undo Last
               </Button>
