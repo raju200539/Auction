@@ -16,10 +16,13 @@ const parseCsv = (csvText: string): Player[] => {
   
   const nameIndex = headers.indexOf('name');
   const positionIndex = headers.indexOf('position');
-  const photoUrlIndex = headers.indexOf('photo url');
+  let photoUrlIndex = headers.indexOf('photo url');
+  if (photoUrlIndex === -1) {
+    photoUrlIndex = headers.indexOf('photo');
+  }
 
   if (nameIndex === -1 || positionIndex === -1 || photoUrlIndex === -1) {
-    throw new Error('CSV must contain "Name", "Position", and "Photo URL" columns.');
+    throw new Error('CSV must contain "Name", "Position", and "Photo URL" (or "Photo") columns.');
   }
 
   return rows.map(row => {
@@ -95,7 +98,7 @@ export default function PlayerUpload() {
             <Upload className="h-6 w-6" /> Player Data Upload
           </CardTitle>
           <CardDescription>
-            Upload CSV files for elite and normal players. Each file must have columns: Name, Position, Photo URL.
+            Upload CSV files for elite and normal players. Each file must have columns: Name, Position, Photo URL (or Photo).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
