@@ -5,7 +5,7 @@ import TeamSetup from '@/components/team-setup';
 import PlayerUpload from '@/components/player-upload';
 import AuctionView from '@/components/auction-view';
 import AuctionSummary from '@/components/auction-summary';
-import { Futbol } from 'lucide-react';
+import { Goal } from 'lucide-react';
 
 export function AppContent() {
   const { stage } = useAuction();
@@ -29,7 +29,7 @@ export function AppContent() {
     <div className="flex flex-col items-center justify-start min-h-screen w-full p-4 md:p-8">
       <header className="w-full max-w-7xl mx-auto mb-8">
         <div className="flex items-center gap-3">
-          <Futbol className="h-8 w-8 text-primary" />
+          <Goal className="h-8 w-8 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
             League Auctioneer
           </h1>
