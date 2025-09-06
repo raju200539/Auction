@@ -8,18 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generateDynamicPlayerCard } from '@/ai/flows/generate-dynamic-player-card';
-import { getImageDataUri } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Download, Loader2, Tag, User } from 'lucide-react';
+import { ArrowRight, Tag } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function AuctionCore() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer } = useAuction();
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedCardUri, setGeneratedCardUri] = useState<string | null>(null);
   const [playerAssigned, setPlayerAssigned] = useState(false);
 
   const currentPlayer = players[currentPlayerIndex];
@@ -38,49 +35,16 @@ export default function AuctionCore() {
       return;
     }
 
-    setIsGenerating(true);
-    setGeneratedCardUri(null);
-
-    try {
-      const photoUrl = await getImageDataUri(currentPlayer.photoUrl);
-      const result = await generateDynamicPlayerCard({
-        playerName: currentPlayer.name,
-        position: currentPlayer.position,
-        photoUrl: photoUrl,
-        teamName: team.name,
-        teamLogoUrl: team.logo,
-        bidAmount: bidAmount,
-        remainingPurse: team.purse - bidAmount,
-      });
-
-      assignPlayer(team.id, bidAmount);
-      setGeneratedCardUri(result.playerCardDataUri);
-      setPlayerAssigned(true);
-      toast({ title: 'Player Assigned!', description: `${currentPlayer.name} sold to ${team.name} for ${bidAmount.toLocaleString()}.` });
-    } catch (error) {
-      console.error(error);
-      toast({ title: 'Card Generation Failed', description: 'Could not generate the player card. Please try again.', variant: 'destructive' });
-    } finally {
-      setIsGenerating(false);
-    }
+    assignPlayer(team.id, bidAmount);
+    setPlayerAssigned(true);
+    toast({ title: 'Player Assigned!', description: `${currentPlayer.name} sold to ${team.name} for ${bidAmount.toLocaleString()}.` });
   };
   
   const handleNextPlayer = () => {
     nextPlayer();
     setPlayerAssigned(false);
-    setGeneratedCardUri(null);
     setBidAmount('');
     setSelectedTeamId(undefined);
-  };
-
-  const downloadImage = () => {
-    if (!generatedCardUri) return;
-    const link = document.createElement('a');
-    link.href = generatedCardUri;
-    link.download = `${currentPlayer.name.replace(/\s+/g, '_')}_card.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   if (!currentPlayer) {
@@ -93,6 +57,8 @@ export default function AuctionCore() {
       </Card>
     );
   }
+
+  const assignedTeam = teams.find(t => t.id === parseInt(selectedTeamId || ''));
 
   return (
     <div className="space-y-6">
@@ -139,45 +105,43 @@ export default function AuctionCore() {
                 disabled={playerAssigned}
               />
             </div>
-            <Button onClick={handleAssignPlayer} disabled={isGenerating || playerAssigned} className="w-full">
-              {isGenerating ? <Loader2 className="animate-spin mr-2" /> : <Tag className="mr-2" />}
-              {isGenerating ? 'Generating Card...' : 'Assign Player & Generate Card'}
+            <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
+              <Tag className="mr-2" />
+              Assign Player
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {generatedCardUri && (
+      {playerAssigned && assignedTeam && (
         <Card>
           <CardHeader>
-            <CardTitle>Final Player Card</CardTitle>
+            <CardTitle>Player Sold</CardTitle>
           </CardHeader>
-          <CardContent className="flex justify-center">
-            <Image
-              src={generatedCardUri}
-              alt={`Final card for ${currentPlayer.name}`}
-              width={400}
-              height={500}
-              className="rounded-lg border shadow-lg"
-              data-ai-hint="player card"
-            />
+          <CardContent className="space-y-4">
+              <div className='flex items-center gap-4'>
+                 <Avatar className="h-16 w-16 border">
+                  <AvatarImage src={assignedTeam.logo} alt={assignedTeam.name} />
+                  <AvatarFallback>{assignedTeam.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="text-lg font-semibold">{currentPlayer.name}</p>
+                    <p className='text-muted-foreground'>Sold to {assignedTeam.name}</p>
+                </div>
+              </div>
+            <div className="text-4xl font-bold text-primary text-center py-4">
+              {bidAmount.toLocaleString()}
+            </div>
+            <div className='text-sm text-muted-foreground text-center'>
+              Remaining Purse: {(assignedTeam.purse).toLocaleString()}
+            </div>
           </CardContent>
-          <CardFooter className="flex-col sm:flex-row gap-4">
-             <Button onClick={downloadImage} variant="secondary">
-              <Download className="mr-2" />
-              Download Card
-            </Button>
-            <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+          <CardFooter>
+            <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
               Next Player <ArrowRight className="ml-2" />
             </Button>
           </CardFooter>
         </Card>
-      )}
-
-      {!generatedCardUri && !isGenerating && playerAssigned && (
-         <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
-            Next Player <ArrowRight className="ml-2" />
-        </Button>
       )}
     </div>
   );
