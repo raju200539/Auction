@@ -16,7 +16,10 @@ const parseCsv = (csvText: string): Player[] => {
   
   const nameIndex = headers.indexOf('name');
   const positionIndex = headers.indexOf('position');
-  let photoUrlIndex = headers.indexOf('photo url');
+  let photoUrlIndex = headers.indexOf('photourl');
+  if (photoUrlIndex === -1) {
+    photoUrlIndex = headers.indexOf('photo url');
+  }
   if (photoUrlIndex === -1) {
     photoUrlIndex = headers.indexOf('photo');
   }
