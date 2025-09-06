@@ -14,15 +14,31 @@ interface PlayerCardProps {
   team: Team;
 }
 
+const getFontEmbedCss = async () => {
+  const fontUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+  try {
+    const response = await fetch(fontUrl);
+    const cssText = await response.text();
+    const style = document.createElement('style');
+    style.innerHTML = cssText;
+    return style.outerHTML;
+  } catch (error) {
+    console.error('Failed to fetch font CSS:', error);
+    return '';
+  }
+}
+
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const downloadCard = () => {
+  const downloadCard = async () => {
     if (cardRef.current === null) {
       return;
     }
+    
+    const fontEmbedCss = await getFontEmbedCss();
 
-    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 })
+    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
