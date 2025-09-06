@@ -19,6 +19,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<PlayerWithId[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [unsoldPlayers, setUnsoldPlayers] = useState<PlayerWithId[]>([]);
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
@@ -27,6 +28,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       (p, i) => ({ ...p, id: i })
     );
     setPlayers(allPlayers);
+    setUnsoldPlayers([]);
   }, []);
 
   const assignPlayer = (teamId: number, bidAmount: number) => {
@@ -50,11 +52,27 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     );
   };
   
-  const nextPlayer = () => {
-    if (currentPlayerIndex < players.length - 1) {
-      setCurrentPlayerIndex(prev => prev + 1);
+  const skipPlayer = () => {
+    const playerToSkip = players[currentPlayerIndex];
+    if (playerToSkip) {
+      setUnsoldPlayers(prev => [...prev, playerToSkip]);
+    }
+    nextPlayer(true);
+  };
+
+  const nextPlayer = (isSkip = false) => {
+    const nextIndex = currentPlayerIndex + 1;
+    if (nextIndex < players.length) {
+      setCurrentPlayerIndex(nextIndex);
     } else {
-      setStage('summary');
+      if (unsoldPlayers.length > 0) {
+        const shuffledUnsold = shuffleArray(unsoldPlayers);
+        setPlayers(prev => [...prev, ...shuffledUnsold]);
+        setUnsoldPlayers([]);
+        setCurrentPlayerIndex(nextIndex);
+      } else {
+        setStage('summary');
+      }
     }
   };
 
@@ -66,6 +84,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     setTeams([]);
     setPlayers([]);
     setCurrentPlayerIndex(0);
+    setUnsoldPlayers([]);
     setStage('team-setup');
   };
 
@@ -80,6 +99,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         setStage,
         setPlayers: handleSetPlayers,
         assignPlayer,
+        skipPlayer,
         nextPlayer,
         startAuction,
         restartAuction,

@@ -9,11 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag } from 'lucide-react';
+import { ArrowRight, Tag, SkipForward } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function AuctionCore() {
-  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer } = useAuction();
+  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer } = useAuction();
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
@@ -45,6 +45,14 @@ export default function AuctionCore() {
     setPlayerAssigned(false);
     setBidAmount('');
     setSelectedTeamId(undefined);
+  };
+  
+  const handleSkipPlayer = () => {
+    skipPlayer();
+    setPlayerAssigned(false);
+    setBidAmount('');
+    setSelectedTeamId(undefined);
+    toast({ title: 'Player Skipped', description: `${currentPlayer.name} will be moved to the end of the auction list.` });
   };
 
   if (!currentPlayer) {
@@ -105,10 +113,16 @@ export default function AuctionCore() {
                 disabled={playerAssigned}
               />
             </div>
-            <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
-              <Tag className="mr-2" />
-              Assign Player
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
+                <Tag className="mr-2" />
+                Assign Player
+              </Button>
+              <Button onClick={handleSkipPlayer} disabled={playerAssigned} variant="outline" className="w-full">
+                <SkipForward className="mr-2" />
+                Skip Player
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

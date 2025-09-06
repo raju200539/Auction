@@ -12,7 +12,8 @@ type AuctionContextType = {
   setStage: (stage: AuctionStage) => void;
   setPlayers: (elite: Player[], normal: Player[]) => void;
   assignPlayer: (teamId: number, bidAmount: number) => void;
-  nextPlayer: () => void;
+  skipPlayer: () => void;
+  nextPlayer: (isSkip?: boolean) => void;
   startAuction: () => void;
   restartAuction: () => void;
 };
