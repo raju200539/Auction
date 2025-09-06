@@ -10,12 +10,12 @@ export default function TeamSidebar() {
   const { teams } = useAuction();
 
   return (
-    <Card className="sticky top-8">
+    <Card className="sticky top-8 h-full flex flex-col">
       <CardHeader>
         <CardTitle>Teams Dashboard</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[60vh] pr-4">
+      <CardContent className="flex-grow overflow-hidden">
+        <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
             {teams.map(team => (
             <div key={team.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50">

@@ -52,6 +52,10 @@ export default function AuctionCore() {
     setPlayerAssigned(false);
     setBidAmount('');
     setSelectedTeamId(undefined);
+    toast({
+        title: "Player Skipped",
+        description: `${currentPlayer.name} has been moved to the end of the list.`,
+    });
   };
 
   if (!currentPlayer) {
@@ -68,8 +72,8 @@ export default function AuctionCore() {
   const assignedTeam = teams.find(t => t.id === parseInt(selectedTeamId || ''));
 
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+      <Card className="overflow-hidden flex flex-col">
         <CardHeader className="p-0">
            <div className="w-full relative aspect-video bg-muted">
             <Image
@@ -86,7 +90,7 @@ export default function AuctionCore() {
             <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="p-6 pt-0">
+        <CardContent className="p-6 pt-0 flex-grow">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="team-select">Assign to Team</Label>
@@ -116,7 +120,7 @@ export default function AuctionCore() {
             </div>
           </div>
         </CardContent>
-         <CardFooter className="bg-muted/50 p-6">
+         <CardFooter className="bg-muted/50 p-6 mt-auto">
             <div className="flex w-full gap-2">
               <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
                 <Tag className="mr-2" />
@@ -130,46 +134,48 @@ export default function AuctionCore() {
          </CardFooter>
       </Card>
 
-      {playerAssigned && assignedTeam && (
-        <Card className="border-green-500 bg-green-50 dark:bg-green-950/50">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-              <CardTitle className="text-2xl text-green-800 dark:text-green-300">Player Sold!</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-              <div className='flex items-center gap-4'>
-                 <Avatar className="h-16 w-16 border">
-                  <AvatarImage src={currentPlayer.photoUrl} alt={currentPlayer.name} />
-                  <AvatarFallback>{currentPlayer.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="text-lg font-semibold">{currentPlayer.name}</p>
-                    <p className='text-muted-foreground'>Sold to {assignedTeam.name}</p>
+      <div className="flex items-center justify-center">
+        {playerAssigned && assignedTeam && (
+            <Card className="border-green-500 bg-green-50 dark:bg-green-950/50 w-full max-w-md">
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <CardTitle className="text-2xl text-green-800 dark:text-green-300">Player Sold!</CardTitle>
                 </div>
-              </div>
-              <Separator />
-              <div className='flex justify-between items-center'>
-                 <div className="text-sm text-muted-foreground">Winning Bid</div>
-                 <div className="text-2xl font-bold text-primary">
-                  {Number(bidAmount).toLocaleString()}
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className='flex items-center gap-4'>
+                    <Avatar className="h-16 w-16 border">
+                    <AvatarImage src={currentPlayer.photoUrl} alt={currentPlayer.name} />
+                    <AvatarFallback>{currentPlayer.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="text-lg font-semibold">{currentPlayer.name}</p>
+                        <p className='text-muted-foreground'>Sold to {assignedTeam.name}</p>
+                    </div>
                 </div>
-              </div>
-              <div className='flex justify-between items-center'>
-                <div className="text-sm text-muted-foreground">{assignedTeam.name}'s Remaining Purse</div>
-                <div className="text-lg font-semibold">
-                  {(assignedTeam.purse).toLocaleString()}
+                <Separator />
+                <div className='flex justify-between items-center'>
+                    <div className="text-sm text-muted-foreground">Winning Bid</div>
+                    <div className="text-2xl font-bold text-primary">
+                    {Number(bidAmount).toLocaleString()}
+                    </div>
                 </div>
-              </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
-              Next Player <ArrowRight className="ml-2" />
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
+                <div className='flex justify-between items-center'>
+                    <div className="text-sm text-muted-foreground">{assignedTeam.name}'s Remaining Purse</div>
+                    <div className="text-lg font-semibold">
+                    {(assignedTeam.purse).toLocaleString()}
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
+                Next Player <ArrowRight className="ml-2" />
+                </Button>
+            </CardFooter>
+            </Card>
+        )}
+      </div>
     </div>
   );
 }
