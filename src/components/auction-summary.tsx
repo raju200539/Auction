@@ -1,15 +1,17 @@
 'use client';
-
+import { useState } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, Trophy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlayerCard } from './player-card';
 
 export default function AuctionSummary() {
   const { teams, restartAuction } = useAuction();
+  const [activeTab, setActiveTab] = useState('team-summary');
 
   const exportTeamSummaryToCsv = () => {
     let csvContent = "Team Name,Total Spent,Remaining Purse,Players Bought\n";
@@ -46,11 +48,13 @@ export default function AuctionSummary() {
   
   return (
     <div className="flex justify-center items-start w-full">
-      <Card className="w-full max-w-6xl">
+      <Card className="w-full max-w-7xl">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle className="text-2xl">Auction Summary</CardTitle>
+               <CardTitle className="flex items-center gap-2 text-2xl">
+                <Trophy className="h-6 w-6" /> Auction Results
+              </CardTitle>
               <CardDescription>Review the final results of the auction.</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -61,18 +65,25 @@ export default function AuctionSummary() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="team-summary">
-            <div className="flex justify-between items-center mb-4">
+          <Tabs defaultValue="team-summary" value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
               <TabsList>
-                <TabsTrigger value="team-summary">Team Summary</TabsTrigger>
-                <TabsTrigger value="player-summary">Player Summary</TabsTrigger>
+                <TabsTrigger value="team-summary">Team View</TabsTrigger>
+                <TabsTrigger value="player-summary">Player View</TabsTrigger>
+                <TabsTrigger value="player-cards">Player Cards</TabsTrigger>
               </TabsList>
-               <Button onClick={exportTeamSummaryToCsv} variant="outline" className="hidden data-[state=active]:flex">
-                  <Download className="mr-2 h-4 w-4" /> Export Team Summary
-                </Button>
-                <Button onClick={exportPlayerSummaryToCsv} variant="outline" className="hidden data-[state=active]:flex">
-                  <Download className="mr-2 h-4 w-4" /> Export Player Summary
-                </Button>
+              <div>
+                {activeTab === 'team-summary' && (
+                   <Button onClick={exportTeamSummaryToCsv} variant="outline">
+                      <Download className="mr-2 h-4 w-4" /> Export Teams
+                    </Button>
+                )}
+                {activeTab === 'player-summary' && (
+                  <Button onClick={exportPlayerSummaryToCsv} variant="outline">
+                    <Download className="mr-2 h-4 w-4" /> Export Players
+                  </Button>
+                )}
+              </div>
             </div>
             <TabsContent value="team-summary">
               <div className="overflow-x-auto">
@@ -93,7 +104,7 @@ export default function AuctionSummary() {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar>
-                                <AvatarImage src={team.logo} />
+                                <AvatarImage src={team.logo} alt={team.name} />
                                 <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <span className="font-medium">{team.name}</span>
@@ -130,17 +141,40 @@ export default function AuctionSummary() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name}))).sort((a,b) => b.bidAmount - a.bidAmount).map(player => (
+                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map(player => (
                       <TableRow key={player.id}>
-                        <TableCell className="font-medium">{player.name}</TableCell>
+                        <TableCell className="font-medium">
+                           <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={player.photoUrl} alt={player.name} />
+                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              {player.name}
+                            </div>
+                        </TableCell>
                         <TableCell>{player.position}</TableCell>
-                        <TableCell>{player.teamName}</TableCell>
+                        <TableCell>
+                           <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={player.teamLogo} alt={player.teamName} />
+                                <AvatarFallback>{player.teamName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              {player.teamName}
+                            </div>
+                        </TableCell>
                         <TableCell className="text-right font-mono">{player.bidAmount.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
+            </TabsContent>
+             <TabsContent value="player-cards">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map(player => (
+                        <PlayerCard key={player.id} player={player} team={teams.find(t => t.name === player.teamName)!} />
+                    ))}
+                </div>
             </TabsContent>
           </Tabs>
         </CardContent>

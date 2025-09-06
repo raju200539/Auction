@@ -62,19 +62,22 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
   const nextPlayer = (isSkip = false) => {
     const nextIndex = currentPlayerIndex + 1;
+    
     if (nextIndex < players.length) {
-      setCurrentPlayerIndex(nextIndex);
-    } else {
-      if (unsoldPlayers.length > 0) {
-        const shuffledUnsold = shuffleArray(unsoldPlayers);
-        setPlayers(prev => [...prev, ...shuffledUnsold]);
-        setUnsoldPlayers([]);
         setCurrentPlayerIndex(nextIndex);
-      } else {
-        setStage('summary');
-      }
+    } else {
+        if (unsoldPlayers.length > 0) {
+            const currentPlayers = players.slice(0, nextIndex);
+            const shuffledUnsold = shuffleArray(unsoldPlayers);
+            // Rebuild the player list, keeping sold players and adding the shuffled unsold ones.
+            setPlayers([...currentPlayers, ...shuffledUnsold]);
+            setUnsoldPlayers([]);
+            setCurrentPlayerIndex(nextIndex);
+        } else {
+            setStage('summary');
+        }
     }
-  };
+};
 
   const startAuction = () => {
     setStage('player-upload');

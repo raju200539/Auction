@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag, SkipForward } from 'lucide-react';
+import { ArrowRight, Tag, SkipForward, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Separator } from './ui/separator';
 
 export default function AuctionCore() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer } = useAuction();
@@ -70,13 +71,9 @@ export default function AuctionCore() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
-          <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-1/2 relative aspect-square md:aspect-[4/3] rounded-lg overflow-hidden bg-muted">
+      <Card className="overflow-hidden">
+        <CardHeader className="p-0">
+           <div className="w-full relative aspect-video bg-muted">
             <Image
               src={currentPlayer.photoUrl}
               alt={currentPlayer.name}
@@ -86,7 +83,13 @@ export default function AuctionCore() {
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
-          <div className="w-full md:w-1/2 space-y-4">
+          <div className="p-6">
+            <CardTitle className="text-3xl font-bold">{currentPlayer.name}</CardTitle>
+            <CardDescription className="text-lg">{currentPlayer.position}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="team-select">Assign to Team</Label>
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
@@ -113,42 +116,54 @@ export default function AuctionCore() {
                 disabled={playerAssigned}
               />
             </div>
-            <div className="flex gap-2">
+          </div>
+        </CardContent>
+         <CardFooter className="bg-muted/50 p-6">
+            <div className="flex w-full gap-2">
               <Button onClick={handleAssignPlayer} disabled={playerAssigned} className="w-full">
                 <Tag className="mr-2" />
                 Assign Player
               </Button>
-              <Button onClick={handleSkipPlayer} disabled={playerAssigned} variant="outline" className="w-full">
+              <Button onClick={handleSkipPlayer} disabled={playerAssigned} variant="outline" className="w-full bg-background">
                 <SkipForward className="mr-2" />
                 Skip Player
               </Button>
             </div>
-          </div>
-        </CardContent>
+         </CardFooter>
       </Card>
 
       {playerAssigned && assignedTeam && (
-        <Card>
+        <Card className="border-green-500 bg-green-50 dark:bg-green-950/50">
           <CardHeader>
-            <CardTitle>Player Sold</CardTitle>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <CardTitle className="text-2xl text-green-800 dark:text-green-300">Player Sold!</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
               <div className='flex items-center gap-4'>
                  <Avatar className="h-16 w-16 border">
-                  <AvatarImage src={assignedTeam.logo} alt={assignedTeam.name} />
-                  <AvatarFallback>{assignedTeam.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={currentPlayer.photoUrl} alt={currentPlayer.name} />
+                  <AvatarFallback>{currentPlayer.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="text-lg font-semibold">{currentPlayer.name}</p>
                     <p className='text-muted-foreground'>Sold to {assignedTeam.name}</p>
                 </div>
               </div>
-            <div className="text-4xl font-bold text-primary text-center py-4">
-              {bidAmount.toLocaleString()}
-            </div>
-            <div className='text-sm text-muted-foreground text-center'>
-              Remaining Purse: {(assignedTeam.purse).toLocaleString()}
-            </div>
+              <Separator />
+              <div className='flex justify-between items-center'>
+                 <div className="text-sm text-muted-foreground">Winning Bid</div>
+                 <div className="text-2xl font-bold text-primary">
+                  {Number(bidAmount).toLocaleString()}
+                </div>
+              </div>
+              <div className='flex justify-between items-center'>
+                <div className="text-sm text-muted-foreground">{assignedTeam.name}'s Remaining Purse</div>
+                <div className="text-lg font-semibold">
+                  {(assignedTeam.purse).toLocaleString()}
+                </div>
+              </div>
           </CardContent>
           <CardFooter>
             <Button onClick={handleNextPlayer} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">
