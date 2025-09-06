@@ -15,11 +15,11 @@ const GenerateDynamicPlayerCardInputSchema = z.object({
   playerName: z.string().describe('The name of the player.'),
   position: z.string().describe('The position of the player.'),
   photoUrl: z.string().describe(
-    'A URL of the player photo, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' /* added comment */
+    "A URL of the player photo, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
   teamName: z.string().describe('The name of the team that bought the player.'),
   teamLogoUrl: z.string().describe(
-    'A URL of the team logo, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' /* added comment */
+    "A URL of the team logo, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
   bidAmount: z.number().describe('The bid amount for the player.'),
   remainingPurse: z.number().describe('The remaining purse of the team.'),
@@ -32,7 +32,7 @@ const GenerateDynamicPlayerCardOutputSchema = z.object({
   playerCardDataUri: z
     .string()
     .describe(
-      'The data URI of the generated player card image, which includes MIME type and Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
+      "The data URI of the generated player card image, which includes MIME type and Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type GenerateDynamicPlayerCardOutput = z.infer<
@@ -45,7 +45,7 @@ export async function generateDynamicPlayerCard(
   return generateDynamicPlayerCardFlow(input);
 }
 
-const prompt = ai.definePrompt({
+const cardGenerationPrompt = ai.definePrompt({
   name: 'generateDynamicPlayerCardPrompt',
   input: {schema: GenerateDynamicPlayerCardInputSchema},
   output: {schema: GenerateDynamicPlayerCardOutputSchema},
@@ -60,7 +60,7 @@ const prompt = ai.definePrompt({
     - Remaining Purse: {{{remainingPurse}}}
 
   The player card should be visually appealing and suitable for showcasing the auction results.
-  Return the image as a data URI.`, // Ensure the prompt is a single string
+  Return the image as a data URI.`,
 });
 
 const generateDynamicPlayerCardFlow = ai.defineFlow(
@@ -70,11 +70,14 @@ const generateDynamicPlayerCardFlow = ai.defineFlow(
     outputSchema: GenerateDynamicPlayerCardOutputSchema,
   },
   async input => {
+    const prompt = await cardGenerationPrompt(input);
+
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
-        {text: prompt(input).prompt!},
+        {text: prompt.prompt!},
         {media: {url: input.photoUrl}},
+        {media: {url: input.teamLogoUrl}},
       ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
