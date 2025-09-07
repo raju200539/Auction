@@ -3,6 +3,7 @@
 import { useState, type ReactNode, useCallback, useEffect } from 'react';
 import type { AuctionStage, Player, PlayerWithId, Team } from '@/types';
 import { AuctionContext } from '@/hooks/use-auction';
+import { useToast } from '@/hooks/use-toast';
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -33,6 +34,7 @@ interface AuctionState {
 }
 
 export function AuctionProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast();
   const [auctionState, setAuctionState] = useState<AuctionState>({ stage: 'loading', teams: [], players: [], currentPlayerIndex: 0, unsoldPlayers: [], lastTransaction: null });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -78,9 +80,25 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
     const shuffledNormal = shuffleArray(normal);
-    const allPlayers = [...shuffledElite, ...shuffledNormal].map(
-      (p, i) => ({ ...p, id: i })
-    );
+    
+    // We create two lists of players, one for elite and one for normal
+    const elitePlayers = shuffledElite.map((p, i) => ({ ...p, id: i, isElite: true }));
+    const normalPlayers = shuffledNormal.map((p, i) => ({ ...p, id: elite.length + i, isElite: false }));
+
+    const allPlayers = [...elitePlayers, ...normalPlayers];
+
+    if (elitePlayers.length > 0) {
+      toast({
+        title: 'Elite Players Round',
+        description: 'The auction will begin with the elite players list.',
+      });
+    } else if (normalPlayers.length > 0) {
+       toast({
+        title: 'Normal Players Round',
+        description: 'The auction will begin with the normal players list.',
+      });
+    }
+
     updateState({
       players: allPlayers,
       unsoldPlayers: [],
@@ -88,7 +106,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       stage: 'auction',
       lastTransaction: null,
     });
-  }, []);
+  }, [toast]);
 
   const assignPlayer = (teamId: number, bidAmount: number) => {
     const playerToAssign = auctionState.players[auctionState.currentPlayerIndex];
@@ -114,48 +132,38 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const skipPlayer = () => {
+  const handleNextPlayer = (isSkip: boolean) => {
     setAuctionState(prevState => {
-      const newUnsold = [
-        ...prevState.unsoldPlayers,
-        prevState.players[prevState.currentPlayerIndex],
-      ];
-      const nextIndex = prevState.currentPlayerIndex + 1;
-      
-      let newState: Partial<AuctionState> = {
-        unsoldPlayers: newUnsold,
-        lastTransaction: null, // Clear last transaction on skip
-        currentPlayerIndex: nextIndex,
-      };
-
-      if (nextIndex >= prevState.players.length) {
-        if (newUnsold.length > 0) {
-          const shuffledUnsold = shuffleArray(newUnsold);
-          newState = {
-            ...newState,
-            players: shuffledUnsold,
-            unsoldPlayers: [],
-            currentPlayerIndex: 0,
-          };
-        } else {
-          newState = { ...newState, stage: 'summary' };
-        }
+      const currentPlayer = prevState.players[prevState.currentPlayerIndex];
+      let newUnsold = [...prevState.unsoldPlayers];
+      if (isSkip) {
+        newUnsold.push(currentPlayer);
       }
-      return { ...prevState, ...newState };
-    });
-  };
-  
-  const nextPlayer = () => {
-     setAuctionState(prevState => {
+      
       const nextIndex = prevState.currentPlayerIndex + 1;
       let newState: Partial<AuctionState> = { 
         lastTransaction: null,
-        currentPlayerIndex: nextIndex 
+        currentPlayerIndex: nextIndex,
+        unsoldPlayers: newUnsold,
       };
 
+      // Check for transition from elite to normal players
+      const nextPlayer = prevState.players[nextIndex];
+      if (currentPlayer.isElite && nextPlayer && !nextPlayer.isElite) {
+         toast({
+          title: 'Normal Players Round',
+          description: 'All elite players have been auctioned. The normal player list will now begin.',
+        });
+      }
+
+      // Check if we reached the end of the current players list
       if (nextIndex >= prevState.players.length) {
-        if (prevState.unsoldPlayers.length > 0) {
-          const shuffledUnsold = shuffleArray(prevState.unsoldPlayers);
+        if (newUnsold.length > 0) {
+          const shuffledUnsold = shuffleArray(newUnsold);
+          toast({
+            title: "Skipped Players Round",
+            description: `Re-auctioning ${shuffledUnsold.length} previously skipped players.`,
+          });
           newState = {
             ...newState,
             players: shuffledUnsold,
@@ -168,6 +176,14 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       }
        return { ...prevState, ...newState };
     });
+  }
+
+  const skipPlayer = () => {
+    handleNextPlayer(true);
+  };
+  
+  const nextPlayer = () => {
+    handleNextPlayer(false);
   };
 
   const undoLastAssignment = () => {

@@ -11,6 +11,7 @@ export type Player = {
   name: string;
   position: string;
   photoUrl: string;
+  isElite?: boolean;
 };
 
 export type PlayerWithId = Player & { id: number };
