@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type ReactNode, useCallback, useEffect } from 'react';
@@ -59,11 +60,10 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   }, []);
   
   useEffect(() => {
-    if (isLoaded) {
-      // Only save to localStorage on stage changes to avoid performance issues with large state.
+    if (isLoaded && auctionState.stage !== 'loading') {
       localStorage.setItem('auctionState', JSON.stringify(auctionState));
     }
-  }, [auctionState.stage, isLoaded]);
+  }, [auctionState, isLoaded]);
 
   const updateState = (updates: Partial<AuctionState>) => {
     setAuctionState(prevState => ({ ...prevState, ...updates }));
@@ -81,7 +81,6 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     const shuffledElite = shuffleArray(elite);
     const shuffledNormal = shuffleArray(normal);
     
-    // We create two lists of players, one for elite and one for normal
     const elitePlayers = shuffledElite.map((p, i) => ({ ...p, id: i, isElite: true }));
     const normalPlayers = shuffledNormal.map((p, i) => ({ ...p, id: elite.length + i, isElite: false }));
 
@@ -133,37 +132,30 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   };
 
   const handleNextPlayer = (isSkip: boolean) => {
+    const { players, currentPlayerIndex, unsoldPlayers } = auctionState;
+    const currentPlayer = players[currentPlayerIndex];
+    const nextIndex = currentPlayerIndex + 1;
+    const nextPlayer = players[nextIndex];
+
+    // Check for transitions before updating state
+    const isTransitioningToNormal = currentPlayer?.isElite && nextPlayer && !nextPlayer.isElite;
+    const isTransitioningToSkippedRound = nextIndex >= players.length && unsoldPlayers.length > 0;
+
     setAuctionState(prevState => {
-      const currentPlayer = prevState.players[prevState.currentPlayerIndex];
       let newUnsold = [...prevState.unsoldPlayers];
-      if (isSkip) {
+      if (isSkip && currentPlayer) {
         newUnsold.push(currentPlayer);
       }
       
-      const nextIndex = prevState.currentPlayerIndex + 1;
       let newState: Partial<AuctionState> = { 
         lastTransaction: null,
         currentPlayerIndex: nextIndex,
         unsoldPlayers: newUnsold,
       };
 
-      // Check for transition from elite to normal players
-      const nextPlayer = prevState.players[nextIndex];
-      if (currentPlayer.isElite && nextPlayer && !nextPlayer.isElite) {
-         toast({
-          title: 'Normal Players Round',
-          description: 'All elite players have been auctioned. The normal player list will now begin.',
-        });
-      }
-
-      // Check if we reached the end of the current players list
       if (nextIndex >= prevState.players.length) {
         if (newUnsold.length > 0) {
           const shuffledUnsold = shuffleArray(newUnsold);
-          toast({
-            title: "Skipped Players Round",
-            description: `Re-auctioning ${shuffledUnsold.length} previously skipped players.`,
-          });
           newState = {
             ...newState,
             players: shuffledUnsold,
@@ -176,6 +168,21 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       }
        return { ...prevState, ...newState };
     });
+
+    // Show toasts after state update
+    if (isTransitioningToNormal) {
+      toast({
+        title: 'Normal Players Round',
+        description: 'All elite players have been auctioned. The normal player list will now begin.',
+      });
+    }
+    if (isTransitioningToSkippedRound) {
+        const skippedCount = isSkip ? unsoldPlayers.length + 1 : unsoldPlayers.length;
+         toast({
+            title: "Skipped Players Round",
+            description: `Re-auctioning ${skippedCount} previously skipped players.`,
+        });
+    }
   }
 
   const skipPlayer = () => {
@@ -202,7 +209,6 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
     
-    // Put the player back into the auction queue at the current position
     setAuctionState(prevState => ({
       ...prevState,
       teams: newTeams,
