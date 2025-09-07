@@ -133,7 +133,7 @@ export default function TeamSetup() {
 
   if (step === 'config') {
     return (
-       <div className="flex justify-center items-start w-full p-4 md:p-0">
+       <div className="flex justify-center items-start w-full">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -173,7 +173,7 @@ export default function TeamSetup() {
   }
 
   return (
-    <div className="flex justify-center items-start w-full p-4 md:p-0">
+    <div className="flex justify-center items-start w-full">
         <Card className="w-full max-w-lg">
             <CardHeader>
                  <Button variant="ghost" size="sm" className="absolute top-4 left-4 text-muted-foreground" onClick={handleBack}>
