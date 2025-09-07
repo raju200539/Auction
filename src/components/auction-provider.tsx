@@ -83,20 +83,20 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
   const setStage = useCallback((stage: AuctionStage) => {
     if (stage === 'summary' && auctionState.teams.length > 0) {
-        const completedAuctionExists = localStorage.getItem('completedAuctionId');
-        const currentAuctionId = auctionState.teams.map(t => t.id).join('-') + auctionState.players.map(p => p.id).join('-');
+        const completedAuctionId = localStorage.getItem('completedAuctionId');
+        const currentAuctionDate = new Date().toISOString();
 
-        if (completedAuctionExists !== currentAuctionId) {
+        if (completedAuctionId !== currentAuctionDate) {
             addPastAuction({
-                id: new Date().toISOString(),
-                date: new Date().toISOString(),
+                id: currentAuctionDate,
+                date: currentAuctionDate,
                 teams: auctionState.teams
             });
-            localStorage.setItem('completedAuctionId', currentAuctionId);
+            localStorage.setItem('completedAuctionId', currentAuctionDate);
         }
     }
     updateState({ stage });
-  }, [auctionState.teams, auctionState.players, addPastAuction]);
+  }, [auctionState.teams, addPastAuction]);
 
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
@@ -152,6 +152,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
     if (isSkippedRoundActive) {
       const newPlayers = players.filter(p => p.id !== playerToAssign.id);
+      
       if (newPlayers.length === 0) {
         updateState({
             teams: newTeams,
@@ -161,6 +162,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         setStage('summary');
         return;
       }
+      
        setAuctionState(prevState => {
         const newPlayerIndex = Math.min(prevState.currentPlayerIndex, newPlayers.length - 1);
         return {
@@ -171,6 +173,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
           lastTransaction: { teamId, player: assignedPlayer },
         };
       });
+
     } else {
        setAuctionState(prevState => ({
         ...prevState,
@@ -184,51 +187,44 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     setAuctionState(prevState => {
         const { players, currentPlayerIndex, isSkippedRoundActive, unsoldPlayers } = prevState;
 
-        const nextIndex = currentPlayerIndex + 1;
-        const currentPlayer = players[currentPlayerIndex];
+        let nextIndex = currentPlayerIndex + (isSkippedRoundActive ? 0 : 1);
         
-        if (isSkippedRoundActive) {
-             return {
-                ...prevState,
-                lastTransaction: null,
-                currentPlayerIndex: Math.min(currentPlayerIndex, players.length -1),
-            };
-        }
+        if (!isSkippedRoundActive) {
+            const currentPlayer = players[currentPlayerIndex];
+            const isTransitioningToNormal = currentPlayer?.isElite && players[nextIndex] && !players[nextIndex].isElite;
+            if (isTransitioningToNormal) {
+                return {
+                    ...prevState,
+                    currentPlayerIndex: nextIndex,
+                    lastTransaction: null,
+                    interstitialMessage: {
+                        title: 'Normal Players Round',
+                        description: 'All elite players have been auctioned. The normal player list will now begin.',
+                    }
+                };
+            }
 
-        const isAuctionOver = !isSkippedRoundActive && nextIndex >= players.length && unsoldPlayers.length === 0;
-        if(isAuctionOver) {
-           setStage('summary');
-           return prevState;
+            const isTransitioningToSkippedRound = nextIndex >= players.length && unsoldPlayers.length > 0;
+            if (isTransitioningToSkippedRound) {
+                const shuffledUnsold = shuffleArray(unsoldPlayers);
+                return {
+                    ...prevState,
+                    players: shuffledUnsold,
+                    unsoldPlayers: [],
+                    currentPlayerIndex: 0,
+                    lastTransaction: null,
+                    isSkippedRoundActive: true,
+                    interstitialMessage: {
+                        title: 'Skipped Players Round',
+                        description: `All players have been auctioned. Re-auctioning ${shuffledUnsold.length} previously skipped players.`,
+                    }
+                };
+            }
         }
-
-        const isTransitioningToNormal = currentPlayer?.isElite && players[nextIndex] && !players[nextIndex].isElite;
-        if (isTransitioningToNormal) {
-            return {
-                ...prevState,
-                currentPlayerIndex: nextIndex,
-                lastTransaction: null,
-                interstitialMessage: {
-                    title: 'Normal Players Round',
-                    description: 'All elite players have been auctioned. The normal player list will now begin.',
-                }
-            };
-        }
-
-        const isTransitioningToSkippedRound = !isSkippedRoundActive && nextIndex >= players.length && unsoldPlayers.length > 0;
-        if (isTransitioningToSkippedRound) {
-            const shuffledUnsold = shuffleArray(unsoldPlayers);
-            return {
-                ...prevState,
-                players: shuffledUnsold,
-                unsoldPlayers: [],
-                currentPlayerIndex: 0,
-                lastTransaction: null,
-                isSkippedRoundActive: true,
-                interstitialMessage: {
-                    title: 'Skipped Players Round',
-                    description: `All players have been auctioned. Re-auctioning ${shuffledUnsold.length} previously skipped players.`,
-                }
-            };
+        
+        if (nextIndex >= players.length && !isSkippedRoundActive && unsoldPlayers.length === 0) {
+          setStage('summary');
+          return { ...prevState, lastTransaction: null };
         }
         
         return {
@@ -275,12 +271,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         return;
     }
     
-    if (players.length === 1) {
-        updateState({ players: [] });
-        setStage('summary');
-        return;
-    }
-
+    // In skipped round, move player to end of queue
     const newPlayers = [...players.slice(0, currentPlayerIndex), ...players.slice(currentPlayerIndex + 1), playerToSkip];
     
     setAuctionState(prevState => {
@@ -316,18 +307,25 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
     setAuctionState(prevState => {
       let newPlayers = prevState.players;
+      let newPlayerIndex = prevState.currentPlayerIndex;
+
+      // If we are undoing an assignment from the skipped round, re-insert the player
       if (prevState.isSkippedRoundActive) {
-          newPlayers = [
-              ...prevState.players.slice(0, prevState.currentPlayerIndex),
-              player,
-              ...prevState.players.slice(prevState.currentPlayerIndex)
-          ]
+          // Check if player is already in the list to prevent duplicates
+          if (!newPlayers.some(p => p.id === player.id)) {
+            newPlayers = [
+                ...prevState.players.slice(0, prevState.currentPlayerIndex),
+                player,
+                ...prevState.players.slice(prevState.currentPlayerIndex)
+            ];
+          }
       }
       
       return {
         ...prevState,
         teams: newTeams,
         players: newPlayers,
+        currentPlayerIndex: newPlayerIndex,
         lastTransaction: null,
       }
     });
