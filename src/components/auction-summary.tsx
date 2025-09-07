@@ -156,7 +156,7 @@ export default function AuctionSummary() {
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage className="object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position)} alt={player.name} />
+                                <AvatarImage className="object-cover object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position)} alt={player.name} />
                                 <AvatarFallback>
                                   <User />
                                 </AvatarFallback>
