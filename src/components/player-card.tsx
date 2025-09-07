@@ -68,7 +68,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
               </h3>
             </div>
           </div>
-          <div className="w-3/5 bg-card flex flex-col justify-between p-4">
+          <div className="w-3/5 bg-secondary flex flex-col justify-between p-4">
             <div className="text-center">
                <p className="font-headline text-lg uppercase tracking-wider text-muted-foreground">{player.position}</p>
             </div>
