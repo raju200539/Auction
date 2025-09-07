@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag, SkipForward, Edit, Undo, User } from 'lucide-react';
+import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionControls() {
@@ -16,15 +16,14 @@ export default function AuctionControls() {
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
-  const [playerAssigned, setPlayerAssigned] = useState(false);
-
+  
   const currentPlayer = players[currentPlayerIndex];
+  const playerAssigned = !!lastTransaction;
 
   useEffect(() => {
-    // Reset state when the player changes
-    setPlayerAssigned(false);
-    setBidAmount('');
+    // Reset controls when the current player changes, as long as it's not due to an undo operation
     setSelectedTeamId(undefined);
+    setBidAmount('');
   }, [currentPlayerIndex]);
 
   const handleAssignPlayer = () => {
@@ -42,12 +41,10 @@ export default function AuctionControls() {
     }
 
     assignPlayer(team.id, bidAmount);
-    setPlayerAssigned(true);
   };
   
   const handleEdit = () => {
     undoLastAssignment();
-    setPlayerAssigned(false);
   };
 
   const handleNextPlayer = () => {
@@ -105,10 +102,10 @@ export default function AuctionControls() {
                 />
                 </div>
             </div>
-            {playerAssigned && (
+            {playerAssigned && lastTransaction && (
             <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800">
                 <p className="font-semibold text-green-800 dark:text-green-300">
-                {currentPlayer.name} assigned to {teams.find(t => t.id === parseInt(selectedTeamId!))?.name} for {Number(bidAmount).toLocaleString()}.
+                {lastTransaction.player.name} assigned to {teams.find(t => t.id === lastTransaction.teamId)?.name} for {lastTransaction.player.bidAmount.toLocaleString()}.
                 </p>
             </div>
             )}

@@ -110,8 +110,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     if (!playerToAssign) return;
     
     const assignedPlayer = { ...playerToAssign, bidAmount };
-    setLastTransaction({ teamId, player: assignedPlayer });
-
+    
     setTeams(prevTeams =>
       prevTeams.map(team => {
         if (team.id === teamId) {
@@ -127,6 +126,11 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         return team;
       })
     );
+    // Remove player from the list of players to be auctioned
+    const newPlayers = [...players];
+    newPlayers.splice(currentPlayerIndex, 1);
+    setPlayers(newPlayers);
+    setLastTransaction({ teamId, player: assignedPlayer });
   };
   
   const skipPlayer = () => {
@@ -134,38 +138,32 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     if (playerToSkip) {
       setUnsoldPlayers(prev => [...prev, playerToSkip]);
     }
-    setLastTransaction(null); // Skipping clears the last transaction
-    nextPlayer(true);
+
+    const newPlayers = [...players];
+    newPlayers.splice(currentPlayerIndex, 1);
+    setPlayers(newPlayers);
+    
+    setLastTransaction(null);
+    checkRoundEnd();
   };
 
-  const nextPlayer = (isSkip = false) => {
-    const nextIndex = currentPlayerIndex + 1;
-    
-    if (nextIndex < players.length) {
-        setCurrentPlayerIndex(nextIndex);
-    } else {
+  const nextPlayer = () => {
+    setLastTransaction(null);
+    checkRoundEnd();
+  };
+  
+  const checkRoundEnd = () => {
+      if (currentPlayerIndex >= players.length) {
         if (unsoldPlayers.length > 0) {
-            setPlayers(prevPlayers => {
-              const soldPlayers = teams.flatMap(t => t.players);
-              const soldPlayerIds = new Set(soldPlayers.map(p => p.id));
-              const allUnsold = [...prevPlayers.filter(p => !soldPlayerIds.has(p.id)), ...unsoldPlayers];
-              const uniqueUnsold = Array.from(new Set(allUnsold.map(p => p.id))).map(id => allUnsold.find(p => p.id === id)!);
-              
-              const shuffledUnsold = shuffleArray(uniqueUnsold);
-              
-              // Re-ID all players to maintain list integrity
-              const newPlayerList = [...soldPlayers, ...shuffledUnsold].map((p, i) => ({...p, id: i}));
-              
-              setPlayers(newPlayerList);
-              setCurrentPlayerIndex(soldPlayers.length);
-              setUnsoldPlayers([]);
-              return newPlayerList;
-            });
+            const shuffledUnsold = shuffleArray(unsoldPlayers);
+            setPlayers(shuffledUnsold);
+            setUnsoldPlayers([]);
+            setCurrentPlayerIndex(0);
         } else {
             setStage('summary');
         }
     }
-  };
+  }
 
   const undoLastAssignment = () => {
     if (!lastTransaction) return;
@@ -182,6 +180,13 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
         }
         return team;
     }));
+    
+    // Add the player back to the start of the players array
+    setPlayers(prevPlayers => {
+        const newPlayers = [...prevPlayers];
+        newPlayers.splice(currentPlayerIndex, 0, player);
+        return newPlayers;
+    });
 
     setLastTransaction(null);
   };
