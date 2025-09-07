@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { usePastAuctions } from '@/hooks/use-past-auctions';
 import AuctionSummary from '@/components/auction-summary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,5 +79,8 @@ function PastAuctionDetail({ id }: { id: string }) {
 }
 
 export default function PastAuctionDetailPage({ params }: { params: { id: string } }) {
-    return <PastAuctionDetail id={params.id} />;
+    // This component is a Server Component by default in App Router,
+    // so `params` is a promise. `React.use` is needed to unwrap it.
+    const { id } = React.use(params);
+    return <PastAuctionDetail id={id} />;
 }
