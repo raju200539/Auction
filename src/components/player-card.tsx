@@ -19,6 +19,7 @@ const getFontEmbedCss = async () => {
   const fontUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
   try {
     const response = await fetch(fontUrl);
+    if (!response.ok) return '';
     const cssText = await response.text();
     const style = document.createElement('style');
     style.innerHTML = cssText;
@@ -34,6 +35,25 @@ const getPlaceholderImageUrl = (position: string) => {
     return `https://picsum.photos/seed/${seed}/600/800`;
 }
 
+async function fetchAndEncodeImage(url: string): Promise<string> {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error("Error fetching or encoding image:", error);
+        return "/images/placeholder.png";
+    }
+}
+
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const photoUrl = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
@@ -44,6 +64,15 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     }
     
     const fontEmbedCss = await getFontEmbedCss();
+    
+    // Temporarily replace image src with base64 encoded version for rendering
+    const imageElement = cardRef.current.querySelector('img[data-ai-hint="player photo"]') as HTMLImageElement | null;
+    const originalSrc = imageElement?.src;
+
+    if (imageElement && photoUrl) {
+      const dataUrl = await fetchAndEncodeImage(photoUrl);
+      imageElement.src = dataUrl;
+    }
 
     toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss, imagePlaceholder: '/images/placeholder.png' })
       .then((dataUrl) => {
@@ -54,6 +83,12 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       })
       .catch((err) => {
         console.error('Failed to download player card', err);
+      })
+      .finally(() => {
+         // Restore original image src
+        if (imageElement && originalSrc) {
+            imageElement.src = originalSrc;
+        }
       });
   };
 
@@ -68,6 +103,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             className="object-cover object-top"
             unoptimized // Use unoptimized for html-to-image to prevent using WebP
             data-ai-hint="player photo"
+            crossOrigin="anonymous"
           />
           <div
             className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/70 to-transparent"
