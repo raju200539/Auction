@@ -1,13 +1,13 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import type { Player, Team } from '@/types';
 import { toPng } from 'html-to-image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { Download, User } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface PlayerCardProps {
   player: Player & { bidAmount: number, teamName: string, teamLogo: string };
@@ -43,45 +43,46 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
 
   return (
     <div className="space-y-2">
-      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/40 shadow-xl font-body group">
-        <div className="relative aspect-[3/4] bg-muted overflow-hidden">
-          <Image
-            src={cardImageSrc}
-            alt={player.name}
-            fill
-            className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
-            unoptimized
-            data-ai-hint="player photo"
-            crossOrigin="anonymous"
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/80 to-transparent"
-          />
-           <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm text-primary-foreground text-sm font-bold uppercase px-3 py-1 rounded-full shadow-lg">
-            {player.position}
-          </div>
-          <div className="absolute bottom-0 left-0 p-4 text-white w-full">
-            <h3 className="text-4xl font-extrabold tracking-tight drop-shadow-xl font-headline uppercase">{player.name}</h3>
-          </div>
-        </div>
-        <CardContent className="p-4 bg-gradient-to-br from-background to-secondary/50 relative">
-          <div className="flex items-center justify-between bg-black/10 dark:bg-black/20 backdrop-blur-sm p-3 rounded-lg border border-white/10">
-             <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border-2 border-white/20">
-                  <AvatarImage src={team.logo} alt={team.name} />
-                  <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className='flex flex-col'>
-                    <span className="text-xs text-muted-foreground">Sold To</span>
-                    <span className="text-xl font-bold font-headline uppercase text-foreground">{team.name}</span>
+      <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-0 shadow-xl font-body group aspect-[1/1.25]">
+        <div className="flex h-full">
+            <div className="w-2/5 relative h-full bg-gradient-to-br from-primary to-primary/70">
+                <Image
+                    src={cardImageSrc}
+                    alt={player.name}
+                    fill
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    unoptimized
+                    data-ai-hint="player photo"
+                    crossOrigin="anonymous"
+                />
+                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
+                 <div className="absolute bottom-0 left-0 p-3 text-white w-full">
+                    <h3 className="text-2xl font-bold tracking-tight drop-shadow-lg font-headline uppercase leading-tight">{player.name}</h3>
                 </div>
-              </div>
-              <div className="flex flex-col items-end">
-                  <span className="text-xs text-muted-foreground">Winning Bid</span>
-                  <span className="font-bold text-2xl text-primary drop-shadow-sm">{player.bidAmount.toLocaleString()}</span>
-              </div>
-          </div>
-        </CardContent>
+            </div>
+            <div className="w-3/5 bg-background flex flex-col justify-between p-4">
+                <div>
+                    <p className="font-headline text-muted-foreground text-sm">Position</p>
+                    <p className="font-headline text-3xl font-bold text-primary uppercase">{player.position}</p>
+                </div>
+                
+                <div className="space-y-1">
+                    <p className="font-headline text-muted-foreground text-sm">Sold To</p>
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8 border">
+                            <AvatarImage src={team.logo} alt={team.name} />
+                            <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-headline text-xl font-bold text-foreground uppercase">{team.name}</p>
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    <p className="font-headline text-muted-foreground text-sm">Final Bid</p>
+                    <p className="font-headline text-4xl font-bold text-foreground">${player.bidAmount.toLocaleString()}</p>
+                </div>
+            </div>
+        </div>
       </Card>
       <Button onClick={downloadCard} variant="outline" className="w-full">
         <Download className="mr-2 h-4 w-4" />
