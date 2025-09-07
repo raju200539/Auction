@@ -1,63 +1,33 @@
-# --- Base Stage ---
-# Use the official Node.js image as a base.
-# Using a specific version is good practice for reproducibility.
-FROM node:18-alpine AS base
-
-# Set the working directory in the container.
+# 1. Installer Stage
+FROM node:18-alpine AS installer
 WORKDIR /app
-
-# --- Dependencies Stage ---
-# This stage is dedicated to installing dependencies, and its results can be cached.
-FROM base AS deps
-
-# Copy package.json and package-lock.json to the working directory.
-COPY package.json package-lock.json* ./
-
-# Install dependencies.
+COPY package*.json ./
 RUN npm ci
 
-# --- Builder Stage ---
-# This stage builds the Next.js application.
-FROM base AS builder
-
-# Copy dependencies from the 'deps' stage.
-COPY --from=deps /app/node_modules ./node_modules
-# Copy the rest of the application code.
+# 2. Builder Stage
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=installer /app/node_modules ./node_modules
 COPY . .
 
-# Ensure the public directory exists, even if it's empty.
-# This prevents the final COPY command from failing if there are no static assets.
+# Set the DOCKER_BUILD environment variable
+ENV DOCKER_BUILD=true
+RUN npm run build
 RUN mkdir -p public
 
-# Build the Next.js application.
-RUN npm run build
-
-# --- Runner Stage ---
-# This is the final, small, and optimized stage for running the application.
-FROM base AS runner
-
+# 3. Runner Stage
+FROM node:18-alpine AS runner
 WORKDIR /app
 
-# Set the environment to production.
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Create a non-root user and group for security purposes.
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy the standalone output from the builder stage.
+# Automatically leverage output traces to reduce image size
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
-# Set the user to the non-root user.
-USER nextjs
+USER node
 
-# Expose the port the app will run on.
 EXPOSE 3000
-
-# Set the port environment variable.
-ENV PORT 3000
-
-# The command to start the application.
 CMD ["node", "server.js"]
