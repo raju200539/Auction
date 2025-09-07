@@ -128,7 +128,8 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const assignPlayer = (teamId: number, bidAmount: number) => {
-    const playerToAssign = auctionState.players[auctionState.currentPlayerIndex];
+    const { players, currentPlayerIndex, isSkippedRoundActive } = auctionState;
+    const playerToAssign = players[currentPlayerIndex];
     if (!playerToAssign) return;
 
     const assignedPlayer = { ...playerToAssign, bidAmount };
@@ -144,37 +145,37 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
 
-    setAuctionState(prevState => {
-      let newPlayers = prevState.players;
-      let newPlayerIndex = prevState.currentPlayerIndex;
-      
-      // If we are in the skipped round, we need to remove the player from the list
-      if (prevState.isSkippedRoundActive) {
-        newPlayers = prevState.players.filter(p => p.id !== playerToAssign.id);
-        // If it was the last player in the skipped round, the auction is over.
-        if (newPlayers.length === 0) {
-          setStage('summary');
-          return {
-            ...prevState,
-            teams: newTeams,
-            players: newPlayers,
-            lastTransaction: { teamId, player: assignedPlayer },
-          };
-        }
-        // Make sure index is not out of bounds after removal
-        if (newPlayerIndex >= newPlayers.length) {
-          newPlayerIndex = Math.max(0, newPlayers.length - 1);
-        }
+    if (isSkippedRoundActive) {
+      const newPlayers = players.filter(p => p.id !== playerToAssign.id);
+      if (newPlayers.length === 0) {
+        setStage('summary');
+        // We still need to set the final state here before summarizing
+        setAuctionState(prevState => ({
+          ...prevState,
+          teams: newTeams,
+          players: newPlayers,
+          lastTransaction: { teamId, player: assignedPlayer }
+        }));
+        return;
       }
-      
-      return {
+      setAuctionState(prevState => {
+        // Make sure index is not out of bounds after removal
+        const newPlayerIndex = Math.min(prevState.currentPlayerIndex, newPlayers.length - 1);
+        return {
+          ...prevState,
+          teams: newTeams,
+          players: newPlayers,
+          currentPlayerIndex: newPlayerIndex,
+          lastTransaction: { teamId, player: assignedPlayer },
+        };
+      });
+    } else {
+       setAuctionState(prevState => ({
         ...prevState,
         teams: newTeams,
-        players: newPlayers,
-        currentPlayerIndex: newPlayerIndex,
         lastTransaction: { teamId, player: assignedPlayer },
-      }
-    });
+      }));
+    }
   };
   
   const handleNextPlayer = () => {
@@ -183,8 +184,17 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
         const nextIndex = currentPlayerIndex + 1;
         const currentPlayer = players[currentPlayerIndex];
+        
+        // This is only for the main round. Skipped round has its own logic.
+        if (isSkippedRoundActive) {
+             return {
+                ...prevState,
+                lastTransaction: null,
+                // The list shrinks, so the index might not need to change
+                currentPlayerIndex: Math.min(currentPlayerIndex, players.length -1),
+            };
+        }
 
-        // This should only happen if assignPlayer was just called in a non-skipped round
         const isAuctionOver = !isSkippedRoundActive && nextIndex >= players.length && unsoldPlayers.length === 0;
         if(isAuctionOver) {
            setStage('summary');
@@ -223,7 +233,6 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
             };
         }
         
-        // This is a normal "next player" action, or end of skipped round
         return {
             ...prevState,
             lastTransaction: null,
@@ -237,12 +246,27 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     const playerToSkip = players[currentPlayerIndex];
     if (!playerToSkip) return;
 
-    // Check if this is the last player in the main round or the skipped round
-    const isLastPlayerInMainRound = !isSkippedRoundActive && currentPlayerIndex + 1 >= players.length;
-    const isLastPlayerInSkippedRound = isSkippedRoundActive && currentPlayerIndex + 1 >= players.length;
+    if (isSkippedRoundActive) {
+        // Re-queue the player to the end of the list and move to the next one
+        const newPlayers = [...players.slice(0, currentPlayerIndex), ...players.slice(currentPlayerIndex + 1), playerToSkip];
+        
+        setAuctionState(prevState => {
+            const newPlayerIndex = Math.min(prevState.currentPlayerIndex, newPlayers.length - 1);
+            return {
+                ...prevState,
+                players: newPlayers,
+                currentPlayerIndex: newPlayerIndex,
+                lastTransaction: null,
+            }
+        });
+        return;
+    }
+
+    // Main round logic
+    const isLastPlayerInMainRound = currentPlayerIndex + 1 >= players.length;
     
-    // If it's the last player in either round and there are no more players to re-auction, end the auction.
-    if ((isLastPlayerInMainRound && unsoldPlayers.length === 0) || isLastPlayerInSkippedRound) {
+    // If it's the last player and there are no more players to re-auction, end the auction.
+    if (isLastPlayerInMainRound && unsoldPlayers.length === 0) {
       setStage('summary');
       return;
     }
@@ -352,5 +376,3 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     </AuctionContext.Provider>
   );
 }
-
-    
