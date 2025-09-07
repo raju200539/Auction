@@ -75,10 +75,10 @@ export default function TeamSetup() {
 
   const handleNextTeam = () => {
     const currentTeam = teams[currentTeamIndex];
-    if (!currentTeam?.name || !currentTeam?.logo || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
+    if (!currentTeam?.name || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
       toast({
         title: "Incomplete Details",
-        description: "Please provide a name, logo, and a valid purse amount for the current team.",
+        description: "Please provide a name and a valid purse amount for the current team.",
         variant: "destructive",
       });
       return;
@@ -96,10 +96,10 @@ export default function TeamSetup() {
 
   const handleFinishSetup = () => {
     const currentTeam = teams[currentTeamIndex];
-    if (!currentTeam?.name || !currentTeam?.logo || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
+    if (!currentTeam?.name || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
       toast({
         title: "Incomplete Details",
-        description: "Please provide a name, logo, and a valid purse for the final team.",
+        description: "Please provide a name and a valid purse for the final team.",
         variant: "destructive",
       });
       return;
@@ -110,7 +110,7 @@ export default function TeamSetup() {
         ({
           id: index,
           name: team.name!,
-          logo: team.logo!,
+          logo: team.logo || '',
           initialPurse: team.initialPurse!,
           purse: team.initialPurse!,
           players: [],
@@ -190,7 +190,7 @@ export default function TeamSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="team-logo" className='flex items-center gap-2'><ImageIcon className='h-4 w-4' /> Team Logo</Label>
+                    <Label htmlFor="team-logo" className='flex items-center gap-2'><ImageIcon className='h-4 w-4' /> Team Logo (Optional)</Label>
                     <Input
                       id="team-logo"
                       type="file"
