@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePastAuctions } from '@/hooks/use-past-auctions';
@@ -10,7 +9,7 @@ import { ArrowLeft, Trophy } from 'lucide-react';
 import { AuctionContext } from '@/hooks/use-auction';
 import { type Team } from '@/types';
 
-export default function PastAuctionDetailPage({ params: { id } }: { params: { id: string } }) {
+function PastAuctionDetail({ id }: { id: string }) {
     const { getAuctionById } = usePastAuctions();
     const auction = getAuctionById(id);
 
@@ -38,7 +37,6 @@ export default function PastAuctionDetailPage({ params: { id } }: { params: { id
     const mockAuctionContext = {
         teams: auction.teams as Team[],
         restartAuction: () => {},
-        // Provide mock implementations for other functions if AuctionSummary needs them
         stage: 'summary' as const,
         players: [],
         currentPlayerIndex: 0,
@@ -76,4 +74,8 @@ export default function PastAuctionDetailPage({ params: { id } }: { params: { id
             </div>
         </AuctionContext.Provider>
     )
+}
+
+export default function PastAuctionDetailPage({ params }: { params: { id: string } }) {
+    return <PastAuctionDetail id={params.id} />;
 }
