@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePastAuctions } from '@/hooks/use-past-auctions';
@@ -76,6 +77,6 @@ function PastAuctionDetail({ id }: { id: string }) {
     )
 }
 
-export default function PastAuctionDetailPage({ params }: { params: { id: string } }) {
-    return <PastAuctionDetail id={params.id} />;
+export default function PastAuctionDetailPage({ params: { id } }: { params: { id: string } }) {
+    return <PastAuctionDetail id={id} />;
 }
