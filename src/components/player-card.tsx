@@ -73,7 +73,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                 </Avatar>
                 <div className='flex flex-col'>
                     <span className="text-xs text-muted-foreground">Sold To</span>
-                    <span className="text-sm font-bold">{team.name}</span>
+                    <span className="text-lg font-bold font-headline uppercase">{team.name}</span>
                 </div>
               </div>
               <div className="flex flex-col items-end">
