@@ -133,7 +133,7 @@ export default function TeamSetup() {
 
   if (step === 'config') {
     return (
-       <div className="flex justify-center items-start w-full">
+       <div className="flex justify-center items-start w-full p-4 md:p-0">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -163,7 +163,7 @@ export default function TeamSetup() {
                     </Button>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleStartDetails} size="lg">
+                    <Button onClick={handleStartDetails} size="lg" className="w-full">
                         Next: Enter Team Details
                     </Button>
                 </CardFooter>
@@ -173,7 +173,7 @@ export default function TeamSetup() {
   }
 
   return (
-    <div className="flex justify-center items-start w-full">
+    <div className="flex justify-center items-start w-full p-4 md:p-0">
         <Card className="w-full max-w-lg">
             <CardHeader>
                  <Button variant="ghost" size="sm" className="absolute top-4 left-4 text-muted-foreground" onClick={handleBack}>
@@ -190,21 +190,22 @@ export default function TeamSetup() {
              {registeredTeams.length > 0 && (
                 <div className="px-6 pb-4 border-b">
                     <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registered Teams</h4>
-                    <div className="flex flex-wrap justify-center gap-4">
+                    <div className="flex flex-wrap justify-center gap-2">
                         {teams.map((team, index) => (
                             <div key={index} 
                                  className={cn(
                                     "flex items-center gap-2 p-2 rounded-lg border cursor-pointer",
+                                    "text-xs sm:text-sm",
                                     index === currentTeamIndex ? "bg-muted border-primary" : "bg-background",
                                     !team.name && "opacity-50 pointer-events-none"
                                 )}
                                 onClick={() => team.name && setCurrentTeamIndex(index)}
                             >
-                                <Avatar className="h-8 w-8">
+                                <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
                                     <AvatarImage src={team.logo} />
                                     <AvatarFallback>{index + 1}</AvatarFallback>
                                 </Avatar>
-                                <span className="text-sm font-medium">{team.name || `Team ${index + 1}`}</span>
+                                <span className="font-medium">{team.name || `Team ${index + 1}`}</span>
                             </div>
                         ))}
                     </div>
@@ -266,15 +267,17 @@ export default function TeamSetup() {
                     </div>
             </CardContent>
             <CardFooter>
-                {isFinalTeam ? (
-                    <Button onClick={handleFinishSetup} size="lg" className="w-full">
-                        Finish Setup & Upload Players
-                    </Button>
-                ) : (
-                    <Button onClick={handleNextTeam} size="lg" className="w-full">
-                        Next Team
-                    </Button>
-                )}
+                <div className="w-full flex flex-col sm:flex-row gap-2">
+                     {isFinalTeam ? (
+                        <Button onClick={handleFinishSetup} size="lg" className="w-full">
+                            Finish Setup & Upload Players
+                        </Button>
+                    ) : (
+                        <Button onClick={handleNextTeam} size="lg" className="w-full">
+                            Next Team
+                        </Button>
+                    )}
+                </div>
             </CardFooter>
         </Card>
     </div>

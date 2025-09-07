@@ -1,8 +1,10 @@
+
 'use client';
 
 import AuctionControls from '@/components/auction-controls';
 import PlayerDisplay from '@/components/player-display';
 import TeamSidebar from '@/components/team-sidebar';
+import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionView() {
   return (
@@ -10,13 +12,17 @@ export default function AuctionView() {
       <aside className="w-full md:w-72 lg:w-80 flex-shrink-0 md:h-full">
         <TeamSidebar />
       </aside>
-      <main className="flex-grow min-w-0 md:h-full grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="h-full hidden xl:block">
-            <PlayerDisplay />
-        </div>
-        <div className="h-full">
-            <AuctionControls />
-        </div>
+      <main className="flex-grow min-w-0 md:h-full">
+         <ScrollArea className="h-full">
+            <div className="flex flex-col xl:flex-row gap-8">
+                <div className="w-full xl:w-1/2">
+                    <PlayerDisplay />
+                </div>
+                <div className="w-full xl:w-1/2">
+                    <AuctionControls />
+                </div>
+            </div>
+        </ScrollArea>
       </main>
     </div>
   );

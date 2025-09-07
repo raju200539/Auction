@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
@@ -94,7 +95,7 @@ export default function PlayerUpload() {
   };
 
   return (
-    <div className="flex justify-center items-start w-full">
+    <div className="flex justify-center items-start w-full p-4 md:p-0">
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">

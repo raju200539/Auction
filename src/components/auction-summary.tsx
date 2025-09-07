@@ -62,7 +62,7 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
   };
   
   return (
-    <div className="flex justify-center items-start w-full">
+    <div className="flex justify-center items-start w-full p-4 md:p-0">
       <Card className="w-full max-w-7xl">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -84,19 +84,19 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
         <CardContent>
           <Tabs defaultValue="team-summary" value={activeTab} onValueChange={setActiveTab}>
             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-3 sm:w-auto">
                 <TabsTrigger value="team-summary">Team View</TabsTrigger>
                 <TabsTrigger value="player-summary">Player View</TabsTrigger>
                 <TabsTrigger value="player-cards">Player Cards</TabsTrigger>
               </TabsList>
-              <div>
+              <div className="w-full sm:w-auto flex justify-end">
                 {activeTab === 'team-summary' && (
-                   <Button onClick={exportTeamSummaryToCsv} variant="outline">
+                   <Button onClick={exportTeamSummaryToCsv} variant="outline" className="w-full sm:w-auto">
                       <Download className="mr-2 h-4 w-4" /> Export Teams
                     </Button>
                 )}
                 {activeTab === 'player-summary' && (
-                  <Button onClick={exportPlayerSummaryToCsv} variant="outline">
+                  <Button onClick={exportPlayerSummaryToCsv} variant="outline" className="w-full sm:w-auto">
                     <Download className="mr-2 h-4 w-4" /> Export Players
                   </Button>
                 )}
