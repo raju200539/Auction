@@ -15,26 +15,10 @@ interface PlayerCardProps {
   team: Team;
 }
 
-const getFontEmbedCss = async () => {
-  const fontUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
-  try {
-    const response = await fetch(fontUrl);
-    if (!response.ok) return '';
-    const cssText = await response.text();
-    const style = document.createElement('style');
-    style.innerHTML = cssText;
-    return style.outerHTML;
-  } catch (error) {
-    console.error('Failed to fetch font CSS:', error);
-    return '';
-  }
-}
-
 const getPlaceholderImageUrl = (position: string) => {
     const seed = `${position.toLowerCase()}`;
     return `https://picsum.photos/seed/${seed}/600/800`;
 }
-
 
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -46,22 +30,20 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       return;
     }
     
-    const fontEmbedCss = await getFontEmbedCss();
-    
     // The html-to-image library has issues with CORS for external images.
-    // We can't use the proxy trick here easily without a lot of complexity.
-    // For now, we will rely on browser caching. A more robust solution might
-    // involve a server-side rendering of the card.
-    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss, fetchRequestInit: { mode: 'cors', cache: 'force-cache' } })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        console.error('Failed to download player card', err);
-      });
+    // A robust solution involves proxying the image request through our own server
+    // or using a service that sets permissive CORS headers.
+    // For this implementation, we will rely on the browser's cache after the image has loaded on screen.
+    try {
+      const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to download player card', err);
+      alert('Could not download card. The image may have failed to load due to security restrictions.');
+    }
   };
 
   return (
@@ -70,7 +52,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
         <div className="relative aspect-[3/4] bg-muted">
           <Image
             src={cardImageSrc}
-            alt=""
+            alt={player.name}
             fill
             className="object-cover object-top"
             unoptimized
