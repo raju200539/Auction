@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, type ChangeEvent, useMemo } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Image as ImageIcon, Wallet, ArrowLeft } from 'lucide-react';
+import { Users, Image as ImageIcon, Wallet, ArrowLeft, Palette } from 'lucide-react';
 import type { Team } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -21,6 +21,8 @@ const fileToBase64 = (file: File): Promise<string> =>
   });
 
 type Step = 'config' | 'details';
+type TeamSetupData = Partial<Team & { initialPurse: number }>;
+
 
 export default function TeamSetup() {
   const { setTeams: setAuctionTeams, startAuction } = useAuction();
@@ -28,7 +30,7 @@ export default function TeamSetup() {
   
   const [step, setStep] = useState<Step>('config');
   const [numTeams, setNumTeams] = useState(4);
-  const [teams, setTeams] = useState<Partial<Team & { initialPurse: number } >[]>([]);
+  const [teams, setTeams] = useState<TeamSetupData[]>([]);
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
 
   const handleTeamDataChange = (field: keyof Team | 'initialPurse', value: string | number) => {
@@ -68,7 +70,7 @@ export default function TeamSetup() {
         });
         return;
     }
-    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i, initialPurse: 100000 })));
+    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i, initialPurse: 100000, color: '#000000' })));
     setCurrentTeamIndex(0);
     setStep('details');
   };
@@ -105,16 +107,17 @@ export default function TeamSetup() {
       return;
     }
 
-    const finalTeams = teams.map(
+    const finalTeams: Team[] = teams.map(
       (team, index) =>
         ({
           id: index,
           name: team.name!,
           logo: team.logo || '',
+          color: team.color || '#000000',
           initialPurse: team.initialPurse!,
           purse: team.initialPurse!,
           players: [],
-        } as Team)
+        })
     );
     setAuctionTeams(finalTeams);
     startAuction();
@@ -175,7 +178,7 @@ export default function TeamSetup() {
             </CardHeader>
             <CardContent className="space-y-6">
                  <div className="flex justify-center">
-                    <Avatar className="h-24 w-24 border-4 border-muted">
+                    <Avatar className="h-24 w-24 border-4 border-muted" style={{ borderColor: currentTeam?.color }}>
                       <AvatarImage src={currentTeam?.logo} alt={currentTeam?.name} />
                       <AvatarFallback>{currentTeam?.name ? currentTeam.name.charAt(0) : currentTeamIndex + 1}</AvatarFallback>
                     </Avatar>
@@ -207,6 +210,25 @@ export default function TeamSetup() {
                             onChange={e => handleTeamDataChange('initialPurse', parseInt(e.target.value, 10) || 0)}
                             placeholder="e.g., 100000"
                         />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="team-color" className="flex items-center gap-2"><Palette className="h-4 w-4" /> Team Color</Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="team-color"
+                                type="color"
+                                value={currentTeam?.color || '#000000'}
+                                onChange={(e) => handleTeamDataChange('color', e.target.value)}
+                                className="p-1 h-10 w-14"
+                            />
+                             <Input
+                                type="text"
+                                value={currentTeam?.color || '#000000'}
+                                onChange={(e) => handleTeamDataChange('color', e.target.value)}
+                                placeholder="e.g., #1D4ED8"
+                                className="w-full"
+                             />
+                        </div>
                     </div>
             </CardContent>
             <CardFooter>

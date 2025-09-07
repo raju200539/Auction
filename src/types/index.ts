@@ -2,6 +2,7 @@ export type Team = {
   id: number;
   name: string;
   logo: string; // base64 string
+  color: string; // hex color string
   purse: number;
   initialPurse: number;
   players: (Player & { bidAmount: number })[];
