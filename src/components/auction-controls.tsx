@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo, User } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import Image from 'next/image';
 
 export default function AuctionControls() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
@@ -20,6 +19,13 @@ export default function AuctionControls() {
   const [playerAssigned, setPlayerAssigned] = useState(false);
 
   const currentPlayer = players[currentPlayerIndex];
+
+  useEffect(() => {
+    // Reset state when the player changes
+    setPlayerAssigned(false);
+    setBidAmount('');
+    setSelectedTeamId(undefined);
+  }, [currentPlayerIndex]);
 
   const handleAssignPlayer = () => {
     if (!selectedTeamId || bidAmount === '' || bidAmount <= 0) {
@@ -46,16 +52,10 @@ export default function AuctionControls() {
 
   const handleNextPlayer = () => {
     nextPlayer();
-    setPlayerAssigned(false);
-    setBidAmount('');
-    setSelectedTeamId(undefined);
   };
   
   const handleSkipPlayer = () => {
     skipPlayer();
-    setPlayerAssigned(false);
-    setBidAmount('');
-    setSelectedTeamId(undefined);
   };
 
   if (!currentPlayer) {
@@ -71,24 +71,6 @@ export default function AuctionControls() {
 
   return (
     <Card className="h-full flex flex-col">
-       <CardHeader className="border-b xl:hidden">
-         <div className="flex items-center gap-4">
-            <div className="relative h-20 w-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                <Image
-                    src={currentPlayer.photoUrl}
-                    alt={currentPlayer.name}
-                    fill
-                    className="object-cover"
-                    data-ai-hint="player photo"
-                    sizes="80px"
-                />
-            </div>
-            <div className="min-w-0">
-                <CardTitle className="text-2xl font-bold truncate">{currentPlayer.name}</CardTitle>
-                <CardDescription className="text-md">{currentPlayer.position}</CardDescription>
-            </div>
-        </div>
-      </CardHeader>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'><Tag className='h-6 w-6'/>Bidding Controls</CardTitle>
         <CardDescription>Select a team and enter the winning bid amount.</CardDescription>
