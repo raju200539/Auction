@@ -144,11 +144,18 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
 
-    setAuctionState(prevState => ({
-      ...prevState,
-      teams: newTeams,
-      lastTransaction: { teamId, player: assignedPlayer },
-    }));
+    setAuctionState(prevState => {
+      const updatedUnsoldPlayers = prevState.isSkippedRoundActive 
+        ? prevState.players.filter(p => p.id !== playerToAssign.id)
+        : prevState.unsoldPlayers;
+
+      return {
+        ...prevState,
+        teams: newTeams,
+        lastTransaction: { teamId, player: assignedPlayer },
+        unsoldPlayers: updatedUnsoldPlayers
+      }
+    });
   };
 
   const handleNextPlayer = (isSkip: boolean) => {
@@ -158,8 +165,6 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     let currentUnsold = unsoldPlayers;
     if (isSkip && currentPlayer) {
       currentUnsold = [...unsoldPlayers, currentPlayer];
-      // Note: We don't update state here immediately to avoid multiple re-renders.
-      // We'll update it along with the player index change.
     }
 
     const nextIndex = currentPlayerIndex + 1;
@@ -235,12 +240,23 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       }
       return team;
     });
-    
-    setAuctionState(prevState => ({
-      ...prevState,
-      teams: newTeams,
-      lastTransaction: null,
-    }));
+
+    setAuctionState(prevState => {
+      const newUnsold = prevState.isSkippedRoundActive 
+        ? [player, ...prevState.players].sort((a,b) => a.id - b.id)
+        : prevState.unsoldPlayers;
+      
+      const newPlayers = prevState.isSkippedRoundActive ? newUnsold : prevState.players;
+
+      return {
+        ...prevState,
+        teams: newTeams,
+        lastTransaction: null,
+        players: newPlayers,
+        // If we undo during skipped round, we need to potentially add the player back to the list
+        unsoldPlayers: prevState.isSkippedRoundActive ? [] : prevState.unsoldPlayers,
+      }
+    });
   };
   
   const startAuction = useCallback(() => {
