@@ -42,8 +42,6 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     }
   };
   
-  const teamColor = team.color || '#1D4ED8'; // Fallback to a default blue
-
   return (
     <div className="space-y-2">
       <Card
@@ -72,7 +70,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
           </div>
           <div className="w-3/5 bg-background flex flex-col justify-around p-4">
             <div className="text-center">
-              <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Position</p>
+              <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Position</p>
               <p
                 className="font-headline text-3xl font-bold uppercase text-primary"
               >
@@ -81,20 +79,20 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             </div>
 
             <div className="text-center">
-               <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
+               <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
                <div className="flex flex-col items-center gap-2 mt-1">
                 <Avatar className="h-20 w-20 border-4 border-primary/50">
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <p className="font-headline text-xl font-bold text-foreground uppercase truncate w-full">
+                <p className="font-headline text-xl font-bold text-foreground uppercase w-full px-2">
                   {team.name}
                 </p>
               </div>
             </div>
 
             <div className="text-center">
-              <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Final Bid</p>
+              <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Final Bid</p>
               <p className="font-headline text-4xl font-bold text-primary">
                 ₹{player.bidAmount.toLocaleString()}
               </p>
