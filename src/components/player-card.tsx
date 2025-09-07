@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Download } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface PlayerCardProps {
   player: Player & { bidAmount: number; teamName: string; teamLogo: string };
@@ -70,7 +69,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
           </div>
           <div className="w-3/5 bg-secondary flex flex-col justify-between p-4">
             <div className="text-center">
-               <p className="font-headline text-lg uppercase tracking-wider text-muted-foreground">{player.position}</p>
+               <p className="font-headline text-xl uppercase tracking-wider text-muted-foreground">{player.position}</p>
             </div>
             
             <div className="text-center">
