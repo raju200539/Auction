@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { Download } from 'lucide-react';
+import { Download, User } from 'lucide-react';
 
 interface PlayerCardProps {
   player: Player & { bidAmount: number, teamName: string, teamLogo: string };
@@ -28,8 +28,14 @@ const getFontEmbedCss = async () => {
   }
 }
 
+const getPlaceholderImageUrl = (position: string) => {
+    const seed = `${position.toLowerCase()}`;
+    return `https://picsum.photos/seed/${seed}/600/800`;
+}
+
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const photoUrl = player.photoUrl || getPlaceholderImageUrl(player.position);
 
   const downloadCard = async () => {
     if (cardRef.current === null) {
@@ -38,7 +44,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     
     const fontEmbedCss = await getFontEmbedCss();
 
-    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss })
+    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss, imagePlaceholder: '/images/placeholder.png' })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
@@ -55,11 +61,12 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/20 shadow-lg font-body">
         <div className="relative aspect-[3/4] bg-muted">
           <Image
-            src={player.photoUrl}
+            src={photoUrl}
             alt={player.name}
             fill
             className="object-cover object-top"
             unoptimized // Use unoptimized for html-to-image to prevent using WebP
+            data-ai-hint="player photo"
           />
           <div
             className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/70 to-transparent"

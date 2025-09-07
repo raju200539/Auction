@@ -5,9 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Download, RefreshCw, Trophy } from 'lucide-react';
+import { Download, RefreshCw, Trophy, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlayerCard } from './player-card';
+
+const getPlaceholderImageUrl = (position: string) => {
+    const seed = `${position.toLowerCase()}`;
+    return `https://picsum.photos/seed/${seed}/100/100`;
+}
 
 export default function AuctionSummary() {
   const { teams, restartAuction } = useAuction();
@@ -151,8 +156,10 @@ export default function AuctionSummary() {
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={player.photoUrl} alt={player.name} />
-                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={player.photoUrl || getPlaceholderImageUrl(player.position)} alt={player.name} />
+                                <AvatarFallback>
+                                  <User />
+                                </AvatarFallback>
                               </Avatar>
                               {player.name}
                             </div>

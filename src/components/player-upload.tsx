@@ -24,18 +24,18 @@ const parseCsv = (csvText: string): Player[] => {
     photoUrlIndex = headers.indexOf('photo');
   }
 
-  if (nameIndex === -1 || positionIndex === -1 || photoUrlIndex === -1) {
-    throw new Error('CSV must contain "Name", "Position", and "Photo URL" (or "Photo") columns.');
+  if (nameIndex === -1 || positionIndex === -1) {
+    throw new Error('CSV must contain "Name" and "Position" columns.');
   }
 
   return rows.map(row => {
-    const values = row.split(',');
+    const values = row.split(',').map(v => v.trim());
     return {
-      name: values[nameIndex]?.trim() || '',
-      position: values[positionIndex]?.trim() || '',
-      photoUrl: values[photoUrlIndex]?.trim() || '',
+      name: values[nameIndex] || '',
+      position: values[positionIndex] || '',
+      photoUrl: photoUrlIndex !== -1 ? values[photoUrlIndex] : '',
     };
-  }).filter(p => p.name && p.position && p.photoUrl);
+  }).filter(p => p.name && p.position);
 };
 
 
@@ -101,7 +101,7 @@ export default function PlayerUpload() {
             <Upload className="h-6 w-6" /> Player Data Upload
           </CardTitle>
           <CardDescription>
-            Upload CSV files for elite and normal players. Each file must have columns: Name, Position, Photo URL (or Photo).
+            Upload CSV files for elite and normal players. Each file must have columns: Name and Position. The "Photo URL" column is now optional.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
