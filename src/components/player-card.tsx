@@ -98,7 +98,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
         <div className="relative aspect-[3/4] bg-muted">
           <Image
             src={photoUrl}
-            alt={player.name}
+            alt=""
             fill
             className="object-cover object-top"
             unoptimized // Use unoptimized for html-to-image to prevent using WebP
