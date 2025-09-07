@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { Player, Team } from '@/types';
 import { toPng } from 'html-to-image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,26 +37,37 @@ const getPlaceholderImageUrl = (position: string) => {
 
 async function fetchAndEncodeImage(url: string): Promise<string> {
     try {
-        const response = await fetch(url);
+        const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
         if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.statusText}`);
+           throw new Error(`Failed to fetch image through proxy: ${response.statusText}`);
         }
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        const { dataUrl } = await response.json();
+        return dataUrl;
     } catch (error) {
         console.error("Error fetching or encoding image:", error);
-        return "/images/placeholder.png";
+        return getPlaceholderImageUrl('default');
     }
 }
 
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const photoUrl = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
+  const [cardImageSrc, setCardImageSrc] = useState(getPlaceholderImageUrl(player.position));
+  
+  useEffect(() => {
+    let isActive = true;
+    const sourceUrl = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
+    
+    // For client-side display, we can use the direct link.
+    // For downloading, we will need to proxy it if it's not a placeholder.
+    if(isActive) {
+        setCardImageSrc(sourceUrl);
+    }
+    
+    return () => {
+      isActive = false;
+    };
+  }, [player.photoUrl, player.position]);
+
 
   const downloadCard = async () => {
     if (cardRef.current === null) {
@@ -65,16 +76,15 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     
     const fontEmbedCss = await getFontEmbedCss();
     
-    // Temporarily replace image src with base64 encoded version for rendering
     const imageElement = cardRef.current.querySelector('img[data-ai-hint="player photo"]') as HTMLImageElement | null;
     const originalSrc = imageElement?.src;
 
-    if (imageElement && photoUrl) {
-      const dataUrl = await fetchAndEncodeImage(photoUrl);
+    if (imageElement && originalSrc && !originalSrc.startsWith('https://picsum.photos')) {
+      const dataUrl = await fetchAndEncodeImage(originalSrc);
       imageElement.src = dataUrl;
     }
 
-    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss, imagePlaceholder: '/images/placeholder.png' })
+    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
@@ -85,7 +95,6 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
         console.error('Failed to download player card', err);
       })
       .finally(() => {
-         // Restore original image src
         if (imageElement && originalSrc) {
             imageElement.src = originalSrc;
         }
@@ -97,11 +106,11 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       <Card ref={cardRef} className="overflow-hidden bg-card text-card-foreground font-sans border-2 border-primary/20 shadow-lg font-body">
         <div className="relative aspect-[3/4] bg-muted">
           <Image
-            src={photoUrl}
+            src={cardImageSrc}
             alt=""
             fill
             className="object-cover object-top"
-            unoptimized // Use unoptimized for html-to-image to prevent using WebP
+            unoptimized
             data-ai-hint="player photo"
             crossOrigin="anonymous"
           />
