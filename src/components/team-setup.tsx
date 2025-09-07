@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
@@ -11,6 +12,7 @@ import { Users, Image as ImageIcon, Wallet, ArrowLeft, Palette } from 'lucide-re
 import type { Team } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -125,6 +127,7 @@ export default function TeamSetup() {
 
   const currentTeam = teams[currentTeamIndex];
   const isFinalTeam = currentTeamIndex === numTeams - 1;
+  const registeredTeams = teams.filter(t => t.name);
 
   if (step === 'config') {
     return (
@@ -163,7 +166,7 @@ export default function TeamSetup() {
 
   return (
     <div className="flex justify-center items-start w-full">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-lg">
             <CardHeader>
                  <Button variant="ghost" size="sm" className="absolute top-4 left-4 text-muted-foreground" onClick={handleBack}>
                     <ArrowLeft className="mr-2" /> Back
@@ -176,7 +179,30 @@ export default function TeamSetup() {
                 </CardDescription>
                 <Progress value={((currentTeamIndex + 1) / numTeams) * 100} className="w-full mt-2" />
             </CardHeader>
-            <CardContent className="space-y-6">
+             {registeredTeams.length > 0 && (
+                <div className="px-6 pb-4 border-b">
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registered Teams</h4>
+                    <div className="flex flex-wrap gap-4">
+                        {teams.map((team, index) => (
+                            <div key={index} 
+                                 className={cn(
+                                    "flex items-center gap-2 p-2 rounded-lg border",
+                                    index === currentTeamIndex ? "bg-muted border-primary" : "bg-background",
+                                    !team.name && "opacity-50"
+                                )}
+                                onClick={() => team.name && setCurrentTeamIndex(index)}
+                            >
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={team.logo} />
+                                    <AvatarFallback>{index + 1}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">{team.name || `Team ${index + 1}`}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            <CardContent className="space-y-6 pt-6">
                  <div className="flex justify-center">
                     <Avatar className="h-24 w-24 border-4 border-muted" style={{ borderColor: currentTeam?.color }}>
                       <AvatarImage src={currentTeam?.logo} alt={currentTeam?.name} />
