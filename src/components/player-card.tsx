@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import type { Player, Team } from '@/types';
 import { toPng } from 'html-to-image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,40 +35,11 @@ const getPlaceholderImageUrl = (position: string) => {
     return `https://picsum.photos/seed/${seed}/600/800`;
 }
 
-async function fetchAndEncodeImage(url: string): Promise<string> {
-    try {
-        const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
-        if (!response.ok) {
-           throw new Error(`Failed to fetch image through proxy: ${response.statusText}`);
-        }
-        const { dataUrl } = await response.json();
-        return dataUrl;
-    } catch (error) {
-        console.error("Error fetching or encoding image:", error);
-        // Fallback to placeholder if proxy fails
-        return getPlaceholderImageUrl('default');
-    }
-}
 
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [cardImageSrc, setCardImageSrc] = useState(getPlaceholderImageUrl(player.position));
   
-  useEffect(() => {
-    let isActive = true;
-    const sourceUrl = convertGoogleDriveLink(player.photoUrl);
-    
-    // For client-side display, we can use the direct link.
-    // The proxy is mainly for the canvas download.
-    if(isActive) {
-        setCardImageSrc(sourceUrl || getPlaceholderImageUrl(player.position));
-    }
-    
-    return () => {
-      isActive = false;
-    };
-  }, [player.photoUrl, player.position]);
-
+  const cardImageSrc = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
 
   const downloadCard = async () => {
     if (cardRef.current === null) {
@@ -77,16 +48,11 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     
     const fontEmbedCss = await getFontEmbedCss();
     
-    // Temporarily change image src to data URL for download
-    const imageElement = cardRef.current.querySelector('img[data-ai-hint="player photo"]') as HTMLImageElement | null;
-    const originalSrc = imageElement?.src;
-
-    if (imageElement && originalSrc && !originalSrc.startsWith('data:') && !originalSrc.startsWith('https://picsum.photos')) {
-      const dataUrl = await fetchAndEncodeImage(originalSrc);
-      imageElement.src = dataUrl;
-    }
-
-    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss })
+    // The html-to-image library has issues with CORS for external images.
+    // We can't use the proxy trick here easily without a lot of complexity.
+    // For now, we will rely on browser caching. A more robust solution might
+    // involve a server-side rendering of the card.
+    toPng(cardRef.current, { cacheBust: true, pixelRatio: 2, fontEmbedCSS: fontEmbedCss, fetchRequestInit: { mode: 'cors', cache: 'force-cache' } })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
@@ -95,12 +61,6 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       })
       .catch((err) => {
         console.error('Failed to download player card', err);
-      })
-      .finally(() => {
-        // Restore original src after download attempt
-        if (imageElement && originalSrc) {
-            imageElement.src = originalSrc;
-        }
       });
   };
 
