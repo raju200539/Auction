@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
+import { ArrowRight, Tag, SkipForward, Edit, Undo, CheckCircle2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionControls() {
@@ -103,10 +103,16 @@ export default function AuctionControls() {
                 </div>
             </div>
             {playerAssigned && lastTransaction && (
-            <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800">
-                <p className="font-semibold text-green-800 dark:text-green-300">
-                {lastTransaction.player.name} assigned to {teams.find(t => t.id === lastTransaction.teamId)?.name} for {lastTransaction.player.bidAmount.toLocaleString()}.
-                </p>
+            <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-2">
+                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div>
+                  <p className="font-bold text-lg text-green-800 dark:text-green-200">
+                    Assignment Successful!
+                  </p>
+                  <p className="text-green-700 dark:text-green-300">
+                    <span className="font-semibold">{lastTransaction.player.name}</span> assigned to <span className="font-semibold">{teams.find(t => t.id === lastTransaction.teamId)?.name}</span> for {lastTransaction.player.bidAmount.toLocaleString()}.
+                  </p>
+                </div>
             </div>
             )}
         </CardContent>
