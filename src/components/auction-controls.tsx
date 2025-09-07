@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionControls() {
@@ -20,15 +19,6 @@ export default function AuctionControls() {
   
   const currentPlayer = players[currentPlayerIndex];
   const playerAssigned = !!lastTransaction;
-
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const rowVirtualizer = useVirtualizer({
-    count: teams.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 32,
-    overscan: 5,
-  });
 
   useEffect(() => {
     // Reset controls when the current player changes, as long as it's not due to an undo operation
@@ -91,28 +81,12 @@ export default function AuctionControls() {
                     <SelectTrigger id="team-select" className="w-full">
                     <SelectValue placeholder="Select a team" />
                     </SelectTrigger>
-                    <SelectContent ref={parentRef}>
-                        <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                        {rowVirtualizer.getVirtualItems().map(virtualItem => {
-                            const team = teams[virtualItem.index];
-                            return (
-                            <SelectItem
-                                key={team.id}
-                                value={String(team.id)}
-                                style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: `${virtualItem.size}px`,
-                                transform: `translateY(${virtualItem.start}px)`,
-                                }}
-                            >
-                                {team.name} (Purse: {team.purse.toLocaleString()})
-                            </SelectItem>
-                            );
-                        })}
-                        </div>
+                    <SelectContent>
+                        {teams.map(team => (
+                          <SelectItem key={team.id} value={String(team.id)}>
+                            {team.name} (Purse: {team.purse.toLocaleString()})
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
                 </div>
