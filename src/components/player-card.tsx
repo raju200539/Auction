@@ -45,6 +45,7 @@ async function fetchAndEncodeImage(url: string): Promise<string> {
         return dataUrl;
     } catch (error) {
         console.error("Error fetching or encoding image:", error);
+        // Fallback to placeholder if proxy fails
         return getPlaceholderImageUrl('default');
     }
 }
@@ -55,12 +56,12 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
   
   useEffect(() => {
     let isActive = true;
-    const sourceUrl = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
+    const sourceUrl = convertGoogleDriveLink(player.photoUrl);
     
     // For client-side display, we can use the direct link.
-    // For downloading, we will need to proxy it if it's not a placeholder.
+    // The proxy is mainly for the canvas download.
     if(isActive) {
-        setCardImageSrc(sourceUrl);
+        setCardImageSrc(sourceUrl || getPlaceholderImageUrl(player.position));
     }
     
     return () => {
@@ -76,10 +77,11 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     
     const fontEmbedCss = await getFontEmbedCss();
     
+    // Temporarily change image src to data URL for download
     const imageElement = cardRef.current.querySelector('img[data-ai-hint="player photo"]') as HTMLImageElement | null;
     const originalSrc = imageElement?.src;
 
-    if (imageElement && originalSrc && !originalSrc.startsWith('https://picsum.photos')) {
+    if (imageElement && originalSrc && !originalSrc.startsWith('data:') && !originalSrc.startsWith('https://picsum.photos')) {
       const dataUrl = await fetchAndEncodeImage(originalSrc);
       imageElement.src = dataUrl;
     }
@@ -95,6 +97,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
         console.error('Failed to download player card', err);
       })
       .finally(() => {
+        // Restore original src after download attempt
         if (imageElement && originalSrc) {
             imageElement.src = originalSrc;
         }
