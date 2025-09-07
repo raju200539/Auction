@@ -190,7 +190,7 @@ export default function TeamSetup() {
              {registeredTeams.length > 0 && (
                 <div className="px-6 pb-4 border-b">
                     <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registered Teams</h4>
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap justify-center gap-4">
                         {teams.map((team, index) => (
                             <div key={index} 
                                  className={cn(
