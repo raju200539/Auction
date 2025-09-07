@@ -68,7 +68,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
               src={cardImageSrc}
               alt={player.name}
               fill
-              className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
+              className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
               unoptimized
               data-ai-hint="player photo"
               crossOrigin="anonymous"
@@ -80,9 +80,9 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
               </h3>
             </div>
           </div>
-          <div className="w-3/5 bg-background flex flex-col justify-between p-4">
-            <div>
-              <p className="font-headline text-muted-foreground text-sm">Position</p>
+          <div className="w-3/5 bg-background flex flex-col justify-around p-4">
+            <div className="text-center">
+              <p className="font-headline text-muted-foreground text-sm uppercase">Position</p>
               <p
                 className="font-headline text-3xl font-bold uppercase"
                 style={{ color: teamColor }}
@@ -91,21 +91,21 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
               </p>
             </div>
 
-            <div className="space-y-1">
-              <p className="font-headline text-muted-foreground text-sm">Sold To</p>
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 border">
+            <div className="text-center">
+              <p className="font-headline text-muted-foreground text-sm uppercase">Sold To</p>
+               <div className="flex flex-col items-center gap-2 mt-1">
+                <Avatar className="h-16 w-16 border-2" style={{borderColor: teamColor}}>
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <p className="font-headline text-xl font-bold text-foreground uppercase">
+                <p className="font-headline text-xl font-bold text-foreground uppercase truncate w-full">
                   {team.name}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <p className="font-headline text-muted-foreground text-sm">Final Bid</p>
+            <div className="text-center">
+              <p className="font-headline text-muted-foreground text-sm uppercase">Final Bid</p>
               <p className="font-headline text-4xl font-bold text-foreground">
                 ${player.bidAmount.toLocaleString()}
               </p>
