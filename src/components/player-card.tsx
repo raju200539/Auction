@@ -63,29 +63,21 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             />
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-0 left-0 p-3 text-white w-full">
+              <p className="font-headline text-sm uppercase tracking-wider">{player.position}</p>
               <h3 className="text-2xl font-headline font-bold tracking-tight drop-shadow-lg uppercase leading-tight">
                 {player.name}
               </h3>
             </div>
           </div>
-          <div className="w-3/5 bg-background flex flex-col justify-around p-4">
+          <div className="w-3/5 bg-background flex flex-col justify-between p-4">
             <div className="text-center">
-              <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Position</p>
-              <p
-                className="font-headline text-3xl font-bold uppercase text-primary"
-              >
-                {player.position}
-              </p>
-            </div>
-
-            <div className="text-center">
-               <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
+              <p className="font-body text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
                <div className="flex flex-col items-center gap-2 mt-1">
-                <Avatar className="h-20 w-20 border-4 border-primary/50">
+                <Avatar className="h-20 w-20 border-4 border-primary/20">
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <p className="font-headline text-xl font-bold text-foreground uppercase w-full px-2">
+                <p className="font-headline text-xl font-bold text-foreground uppercase w-full px-2 leading-tight">
                   {team.name}
                 </p>
               </div>
