@@ -1,3 +1,4 @@
+
 export type Team = {
   id: number;
   name: string;
@@ -18,3 +19,9 @@ export type Player = {
 export type PlayerWithId = Player & { id: number };
 
 export type AuctionStage = 'team-setup' | 'player-upload' | 'auction' | 'summary';
+
+export type PastAuction = {
+  id: string;
+  date: string;
+  teams: Team[];
+};

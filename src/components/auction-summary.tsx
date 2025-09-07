@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useAuction } from '@/hooks/use-auction';
@@ -14,7 +15,7 @@ const getPlaceholderImageUrl = (position: string) => {
     return `https://picsum.photos/seed/${seed}/100/100`;
 }
 
-export default function AuctionSummary() {
+export default function AuctionSummary({ isPastAuction = false }: { isPastAuction?: boolean}) {
   const { teams, restartAuction } = useAuction();
   const [activeTab, setActiveTab] = useState('team-summary');
 
@@ -71,11 +72,13 @@ export default function AuctionSummary() {
               </CardTitle>
               <CardDescription>Review the final results of the auction.</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={restartAuction}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Start New Auction
-              </Button>
-            </div>
+            {!isPastAuction && (
+                <div className="flex gap-2">
+                <Button onClick={restartAuction}>
+                    <RefreshCw className="mr-2 h-4 w-4" /> Start New Auction
+                </Button>
+                </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>

@@ -5,6 +5,7 @@ import { useState, type ReactNode, useCallback, useEffect } from 'react';
 import type { AuctionStage, Player, PlayerWithId, Team } from '@/types';
 import { AuctionContext } from '@/hooks/use-auction';
 import { useToast } from '@/hooks/use-toast';
+import { usePastAuctions } from '@/hooks/use-past-auctions';
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -38,6 +39,7 @@ interface AuctionState {
 
 export function AuctionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const { addPastAuction } = usePastAuctions();
   const [auctionState, setAuctionState] = useState<AuctionState>({ stage: 'loading', teams: [], players: [], currentPlayerIndex: 0, unsoldPlayers: [], lastTransaction: null, interstitialMessage: null });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -78,8 +80,17 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setStage = useCallback((stage: AuctionStage) => {
+    if (stage === 'summary' && auctionState.teams.length > 0) {
+      addPastAuction({
+        id: new Date().toISOString(),
+        date: new Date().toISOString(),
+        teams: auctionState.teams
+      });
+      // Clear current auction from local storage after saving it.
+      localStorage.removeItem('auctionState');
+    }
     updateState({ stage });
-  }, []);
+  }, [auctionState.teams, addPastAuction]);
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
@@ -180,7 +191,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     }
 
     if (nextIndex >= players.length && auctionState.unsoldPlayers.length === 0) {
-      updateState({ stage: 'summary' });
+      setStage('summary');
       return;
     }
     

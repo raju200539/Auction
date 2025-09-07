@@ -2,17 +2,19 @@
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
+import Link from 'next/link';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Image as ImageIcon, Wallet, ArrowLeft, Palette } from 'lucide-react';
+import { Users, Image as ImageIcon, Wallet, ArrowLeft, Palette, History } from 'lucide-react';
 import type { Team } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -153,6 +155,12 @@ export default function TeamSetup() {
                             placeholder="e.g., 4"
                         />
                     </div>
+                     <Separator />
+                    <Button asChild variant="outline" className="w-full">
+                        <Link href="/past-auctions">
+                            <History className="mr-2" /> View Past Auctions
+                        </Link>
+                    </Button>
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleStartDetails} size="lg">
@@ -186,9 +194,9 @@ export default function TeamSetup() {
                         {teams.map((team, index) => (
                             <div key={index} 
                                  className={cn(
-                                    "flex items-center gap-2 p-2 rounded-lg border",
+                                    "flex items-center gap-2 p-2 rounded-lg border cursor-pointer",
                                     index === currentTeamIndex ? "bg-muted border-primary" : "bg-background",
-                                    !team.name && "opacity-50"
+                                    !team.name && "opacity-50 pointer-events-none"
                                 )}
                                 onClick={() => team.name && setCurrentTeamIndex(index)}
                             >
