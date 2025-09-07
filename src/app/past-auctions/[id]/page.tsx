@@ -10,8 +10,7 @@ import { ArrowLeft, Trophy } from 'lucide-react';
 import { AuctionContext } from '@/hooks/use-auction';
 import { type Team } from '@/types';
 
-function PastAuctionDetail({ params }: { params: { id: string } }) {
-    const { id } = params;
+function PastAuctionDetail({ id }: { id: string }) {
     const { getAuctionById } = usePastAuctions();
     const auction = getAuctionById(id);
 
@@ -79,5 +78,5 @@ function PastAuctionDetail({ params }: { params: { id: string } }) {
 }
 
 export default function PastAuctionDetailPage({ params }: { params: { id: string } }) {
-    return <PastAuctionDetail params={params} />;
+    return <PastAuctionDetail id={params.id} />;
 }
