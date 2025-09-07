@@ -132,7 +132,7 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
                           <TableCell>
                             <div className="flex flex-col gap-1 text-sm">
                               {team.players.map(player => (
-                                <div key={player.id}>
+                                <div key={`${team.id}-${player.id}`}>
                                   {player.name} - <span className="text-muted-foreground">{player.bidAmount.toLocaleString()}</span>
                                 </div>
                               ))}
