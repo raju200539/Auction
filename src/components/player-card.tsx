@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Download, User } from 'lucide-react';
-import { convertGoogleDriveLink } from '@/lib/utils';
 
 interface PlayerCardProps {
   player: Player & { bidAmount: number, teamName: string, teamLogo: string };
@@ -23,17 +22,13 @@ const getPlaceholderImageUrl = (position: string) => {
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   
-  const cardImageSrc = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
+  const cardImageSrc = player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position);
 
   const downloadCard = async () => {
     if (cardRef.current === null) {
       return;
     }
     
-    // The html-to-image library has issues with CORS for external images.
-    // A robust solution involves proxying the image request through our own server
-    // or using a service that sets permissive CORS headers.
-    // For this implementation, we will rely on the browser's cache after the image has loaded on screen.
     try {
       const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
       const link = document.createElement('a');
