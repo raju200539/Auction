@@ -74,7 +74,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                       <p className="font-body text-yellow-400/80 text-lg uppercase tracking-wider">{player.position}</p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                       <div className="w-full border-b border-yellow-400/50"></div>
                       <p className="font-body text-yellow-400/80 text-xs uppercase tracking-wider">Sold To:</p>
                       <div className="flex items-center gap-3">
@@ -82,7 +82,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                               <AvatarImage src={team.logo} alt={team.name} className="object-contain"/>
                               <AvatarFallback className="bg-transparent text-xs">{team.name.substring(0,3)}</AvatarFallback>
                           </Avatar>
-                          <p className="font-headline text-2xl font-bold text-white uppercase leading-tight tracking-wider">
+                          <p className="font-headline text-3xl font-bold text-white uppercase leading-tight tracking-wider">
                               {team.name}
                           </p>
                       </div>
