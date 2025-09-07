@@ -76,35 +76,36 @@ export default function AuctionControls() {
       </CardHeader>
       <ScrollArea className="flex-grow">
         <CardContent className="p-6">
-            <div className="space-y-4">
-                <div className="space-y-2">
-                <Label htmlFor="team-select">Assign to Team</Label>
-                <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
-                    <SelectTrigger id="team-select" className="w-full">
-                    <SelectValue placeholder="Select a team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {teams.map(team => (
-                          <SelectItem key={team.id} value={String(team.id)}>
-                            {team.name} (Purse: {team.purse.toLocaleString()})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="bid-amount">Bid Amount</Label>
-                <Input
-                    id="bid-amount"
-                    type="number"
-                    placeholder="Enter bid amount"
-                    value={bidAmount}
-                    onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                    disabled={playerAssigned}
-                />
-                </div>
-            </div>
-            {playerAssigned && lastTransaction && assignedTeam && (
+            {!playerAssigned ? (
+              <div className="space-y-4">
+                  <div className="space-y-2">
+                  <Label htmlFor="team-select">Assign to Team</Label>
+                  <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={playerAssigned}>
+                      <SelectTrigger id="team-select" className="w-full">
+                      <SelectValue placeholder="Select a team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {teams.map(team => (
+                            <SelectItem key={team.id} value={String(team.id)}>
+                              {team.name} (Purse: {team.purse.toLocaleString()})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="bid-amount">Bid Amount</Label>
+                  <Input
+                      id="bid-amount"
+                      type="number"
+                      placeholder="Enter bid amount"
+                      value={bidAmount}
+                      onChange={e => setBidAmount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                      disabled={playerAssigned}
+                  />
+                  </div>
+              </div>
+            ) : lastTransaction && assignedTeam && (
             <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-3">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
                  <Avatar className="h-16 w-16 border-2" style={{ borderColor: assignedTeam.color }}>
