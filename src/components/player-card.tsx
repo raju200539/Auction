@@ -14,15 +14,15 @@ interface PlayerCardProps {
   team: Team;
 }
 
-const getPlaceholderImageUrl = (position: string) => {
-  const seed = `${position.toLowerCase()}`;
+const getPlaceholderImageUrl = (position: string, name: string) => {
+  const seed = `${position.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
   return `https://picsum.photos/seed/${seed}/600/800`;
 };
 
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const cardImageSrc = player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position);
+  const cardImageSrc = player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name);
 
   const downloadCard = async () => {
     if (cardRef.current === null) {

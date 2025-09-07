@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -5,8 +6,8 @@ import { useAuction } from '@/hooks/use-auction';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'lucide-react';
 
-const getPlaceholderImageUrl = (position: string) => {
-    const seed = `${position.toLowerCase()}`;
+const getPlaceholderImageUrl = (position: string, name: string) => {
+    const seed = `${position.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     return `https://picsum.photos/seed/${seed}/800/600`;
 }
 
@@ -25,7 +26,7 @@ export default function PlayerDisplay() {
     );
   }
 
-  const photoUrl = currentPlayer.photoUrl ? `/api/image?url=${encodeURIComponent(currentPlayer.photoUrl)}` : getPlaceholderImageUrl(currentPlayer.position);
+  const photoUrl = currentPlayer.photoUrl ? `/api/image?url=${encodeURIComponent(currentPlayer.photoUrl)}` : getPlaceholderImageUrl(currentPlayer.position, currentPlayer.name);
 
   return (
     <Card className="h-full flex flex-col">

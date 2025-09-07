@@ -10,8 +10,8 @@ import { Download, RefreshCw, Trophy, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlayerCard } from './player-card';
 
-const getPlaceholderImageUrl = (position: string) => {
-    const seed = `${position.toLowerCase()}`;
+const getPlaceholderImageUrl = (position: string, name: string) => {
+    const seed = `${position.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     return `https://picsum.photos/seed/${seed}/100/100`;
 }
 
@@ -163,7 +163,7 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage className="object-cover object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position)} alt={player.name} />
+                                <AvatarImage className="object-cover object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name)} alt={player.name} />
                                 <AvatarFallback>
                                   <User />
                                 </AvatarFallback>
