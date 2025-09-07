@@ -58,9 +58,10 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (isLoaded) {
+      // Only save to localStorage on stage changes to avoid performance issues with large state.
       localStorage.setItem('auctionState', JSON.stringify(auctionState));
     }
-  }, [auctionState, isLoaded]);
+  }, [auctionState.stage, isLoaded]);
 
   const updateState = (updates: Partial<AuctionState>) => {
     setAuctionState(prevState => ({ ...prevState, ...updates }));
@@ -106,10 +107,11 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
 
-    updateState({
+    setAuctionState(prevState => ({
+      ...prevState,
       teams: newTeams,
       lastTransaction: { teamId, player: assignedPlayer },
-    });
+    }));
   };
 
   const skipPlayer = () => {
@@ -185,10 +187,11 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
     
     // Put the player back into the auction queue at the current position
-    updateState({
+    setAuctionState(prevState => ({
+      ...prevState,
       teams: newTeams,
       lastTransaction: null,
-    });
+    }));
   };
   
   const startAuction = useCallback(() => {

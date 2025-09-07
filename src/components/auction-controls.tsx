@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 export default function AuctionControls() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
@@ -19,6 +20,15 @@ export default function AuctionControls() {
   
   const currentPlayer = players[currentPlayerIndex];
   const playerAssigned = !!lastTransaction;
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: teams.length,
+    getScrollElement: () => parentRef.current,
+    itemSize: 32,
+    overscan: 5,
+  });
 
   useEffect(() => {
     // Reset controls when the current player changes, as long as it's not due to an undo operation
@@ -81,12 +91,28 @@ export default function AuctionControls() {
                     <SelectTrigger id="team-select" className="w-full">
                     <SelectValue placeholder="Select a team" />
                     </SelectTrigger>
-                    <SelectContent>
-                    {teams.map(team => (
-                        <SelectItem key={team.id} value={String(team.id)}>
-                        {team.name} (Purse: {team.purse.toLocaleString()})
-                        </SelectItem>
-                    ))}
+                    <SelectContent ref={parentRef}>
+                        <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                        {rowVirtualizer.getVirtualItems().map(virtualItem => {
+                            const team = teams[virtualItem.index];
+                            return (
+                            <SelectItem
+                                key={team.id}
+                                value={String(team.id)}
+                                style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: `${virtualItem.size}px`,
+                                transform: `translateY(${virtualItem.start}px)`,
+                                }}
+                            >
+                                {team.name} (Purse: {team.purse.toLocaleString()})
+                            </SelectItem>
+                            );
+                        })}
+                        </div>
                     </SelectContent>
                 </Select>
                 </div>
