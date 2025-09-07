@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Download, RefreshCw, Trophy, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlayerCard } from './player-card';
+import { convertGoogleDriveLink } from '@/lib/utils';
 
 const getPlaceholderImageUrl = (position: string) => {
     const seed = `${position.toLowerCase()}`;
@@ -156,7 +157,7 @@ export default function AuctionSummary() {
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={player.photoUrl || getPlaceholderImageUrl(player.position)} alt={player.name} />
+                                <AvatarImage src={convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position)} alt={player.name} />
                                 <AvatarFallback>
                                   <User />
                                 </AvatarFallback>

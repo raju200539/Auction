@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useAuction } from '@/hooks/use-auction';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'lucide-react';
+import { convertGoogleDriveLink } from '@/lib/utils';
 
 const getPlaceholderImageUrl = (position: string) => {
     const seed = `${position.toLowerCase()}`;
@@ -25,7 +26,7 @@ export default function PlayerDisplay() {
     );
   }
 
-  const photoUrl = currentPlayer.photoUrl || getPlaceholderImageUrl(currentPlayer.position);
+  const photoUrl = convertGoogleDriveLink(currentPlayer.photoUrl) || getPlaceholderImageUrl(currentPlayer.position);
 
   return (
     <Card className="h-full flex flex-col">

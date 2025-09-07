@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Download, User } from 'lucide-react';
+import { convertGoogleDriveLink } from '@/lib/utils';
 
 interface PlayerCardProps {
   player: Player & { bidAmount: number, teamName: string, teamLogo: string };
@@ -35,7 +36,7 @@ const getPlaceholderImageUrl = (position: string) => {
 
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const photoUrl = player.photoUrl || getPlaceholderImageUrl(player.position);
+  const photoUrl = convertGoogleDriveLink(player.photoUrl) || getPlaceholderImageUrl(player.position);
 
   const downloadCard = async () => {
     if (cardRef.current === null) {
