@@ -12,3 +12,5 @@ export default function Home() {
         </AuctionProvider>
       </PastAuctionsProvider>
     </main>
+  );
+}
