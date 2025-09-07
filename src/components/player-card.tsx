@@ -22,6 +22,7 @@ const getPlaceholderImageUrl = (position: string) => {
 
 // Function to lighten or darken a hex color
 const adjustColor = (color: string, amount: number) => {
+  if (!color) return '#000000';
   return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
 }
 
@@ -47,14 +48,14 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     }
   };
   
-  const teamColor = team.color || 'hsl(var(--primary))';
-  const gradientColor = adjustColor(teamColor, -20); // Darken for gradient effect
+  const teamColor = team.color || '#1D4ED8'; // Fallback to a default blue
+  const gradientColor = adjustColor(teamColor, -40); // Darken for gradient effect
 
   return (
     <div className="space-y-2">
       <Card
         ref={cardRef}
-        className="overflow-hidden bg-card text-card-foreground font-sans border-0 shadow-xl font-body group aspect-[1/1.25]"
+        className="overflow-hidden bg-card text-card-foreground border-0 shadow-xl group aspect-[3/4]"
       >
         <div className="flex h-full">
           <div
@@ -68,21 +69,21 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
               src={cardImageSrc}
               alt={player.name}
               fill
-              className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+              className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
               unoptimized
               data-ai-hint="player photo"
               crossOrigin="anonymous"
             />
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-0 left-0 p-3 text-white w-full">
-              <h3 className="text-2xl font-bold tracking-tight drop-shadow-lg font-headline uppercase leading-tight">
+              <h3 className="text-2xl font-headline font-bold tracking-tight drop-shadow-lg uppercase leading-tight">
                 {player.name}
               </h3>
             </div>
           </div>
           <div className="w-3/5 bg-background flex flex-col justify-around p-4">
             <div className="text-center">
-              <p className="font-headline text-muted-foreground text-sm uppercase">Position</p>
+              <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Position</p>
               <p
                 className="font-headline text-3xl font-bold uppercase"
                 style={{ color: teamColor }}
@@ -92,9 +93,9 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             </div>
 
             <div className="text-center">
-              <p className="font-headline text-muted-foreground text-sm uppercase">Sold To</p>
+               <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
                <div className="flex flex-col items-center gap-2 mt-1">
-                <Avatar className="h-16 w-16 border-2" style={{borderColor: teamColor}}>
+                <Avatar className="h-20 w-20 border-4" style={{borderColor: teamColor}}>
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -105,9 +106,9 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             </div>
 
             <div className="text-center">
-              <p className="font-headline text-muted-foreground text-sm uppercase">Final Bid</p>
-              <p className="font-headline text-4xl font-bold text-foreground">
-                ${player.bidAmount.toLocaleString()}
+              <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Final Bid</p>
+              <p className="font-headline text-4xl font-bold" style={{ color: teamColor }}>
+                ₹{player.bidAmount.toLocaleString()}
               </p>
             </div>
           </div>

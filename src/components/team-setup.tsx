@@ -70,7 +70,7 @@ export default function TeamSetup() {
         });
         return;
     }
-    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i, initialPurse: 100000, color: '#000000' })));
+    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i, initialPurse: 100000, color: '#1D4ED8' })));
     setCurrentTeamIndex(0);
     setStep('details');
   };
@@ -113,7 +113,7 @@ export default function TeamSetup() {
           id: index,
           name: team.name!,
           logo: team.logo || '',
-          color: team.color || '#000000',
+          color: team.color || '#1D4ED8',
           initialPurse: team.initialPurse!,
           purse: team.initialPurse!,
           players: [],
@@ -217,13 +217,13 @@ export default function TeamSetup() {
                             <Input
                                 id="team-color"
                                 type="color"
-                                value={currentTeam?.color || '#000000'}
+                                value={currentTeam?.color || '#1D4ED8'}
                                 onChange={(e) => handleTeamDataChange('color', e.target.value)}
                                 className="p-1 h-10 w-14"
                             />
                              <Input
                                 type="text"
-                                value={currentTeam?.color || '#000000'}
+                                value={currentTeam?.color || '#1D4ED8'}
                                 onChange={(e) => handleTeamDataChange('color', e.target.value)}
                                 placeholder="e.g., #1D4ED8"
                                 className="w-full"
