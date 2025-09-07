@@ -154,11 +154,12 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       const newPlayers = players.filter(p => p.id !== playerToAssign.id);
       
       if (newPlayers.length === 0) {
-        updateState({
-            teams: newTeams,
-            players: [],
-            lastTransaction: { teamId, player: assignedPlayer },
-        });
+        setAuctionState(prevState => ({
+          ...prevState,
+          teams: newTeams,
+          players: [],
+          lastTransaction: { teamId, player: assignedPlayer },
+        }));
         setStage('summary');
         return;
       }
