@@ -75,15 +75,15 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                       <p className="font-body text-yellow-400/80 text-lg uppercase tracking-wider">{player.position}</p>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                       <div className="w-full border-b border-yellow-400/50"></div>
                       <p className="font-body text-yellow-400/80 text-xs uppercase tracking-wider">Sold To:</p>
-                      <div className="flex items-center gap-3">
+                      <div>
                           <Avatar className="h-16 w-16 border-2 border-yellow-400/30 bg-black/50 p-1 flex-shrink-0">
                               <AvatarImage src={team.logo} alt={team.name} className="object-contain"/>
                               <AvatarFallback className="bg-transparent text-xs">{team.name.substring(0,3)}</AvatarFallback>
                           </Avatar>
-                          <p className="font-headline text-2xl font-bold text-white uppercase tracking-wider">
+                          <p className="font-headline text-2xl font-bold text-white uppercase tracking-wider mt-2">
                               {team.name}
                           </p>
                       </div>
