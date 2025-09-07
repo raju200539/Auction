@@ -51,22 +51,24 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                     {/* Left side with Player Image */}
                     <div className="w-2/5 h-full relative flex items-center justify-center">
                         <div className="absolute inset-0 bg-white/90" style={{ clipPath: 'polygon(0 0, 100% 0, 85% 100%, 0% 100%)' }}></div>
-                        <div className="h-5/6 w-full relative" style={{ clipPath: 'polygon(0 0, 100% 0, 85% 100%, 0% 100%)' }}>
-                            <Image
-                                src={cardImageSrc}
-                                alt={player.name}
-                                fill
-                                className="object-contain object-bottom"
-                                unoptimized
-                                crossOrigin="anonymous"
-                                data-ai-hint="player photo"
-                            />
+                        <div className="h-full w-full relative p-4" style={{ clipPath: 'polygon(0 0, 100% 0, 85% 100%, 0% 100%)' }}>
+                            <div className="relative h-full w-full">
+                                <Image
+                                    src={cardImageSrc}
+                                    alt={player.name}
+                                    fill
+                                    className="object-cover object-center"
+                                    unoptimized
+                                    crossOrigin="anonymous"
+                                    data-ai-hint="player photo"
+                                />
+                            </div>
                         </div>
                     </div>
                     {/* Right side with Player Details */}
                     <div className="w-3/5 h-full flex flex-col justify-center items-center text-center p-4 space-y-4">
                         <div>
-                            <h3 className="font-headline text-3xl font-bold tracking-wider uppercase leading-tight text-yellow-300">
+                            <h3 className="font-headline text-3xl font-bold tracking-wider uppercase leading-tight text-yellow-300" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
                                 {player.name}
                             </h3>
                         </div>
@@ -84,7 +86,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                         <div className="w-full border-b-2 border-yellow-400/50"></div>
                         <div>
                             <p className="font-body text-yellow-300/80 text-sm uppercase tracking-wider">Final Bid</p>
-                            <p className="font-headline text-4xl font-bold text-yellow-300">
+                            <p className="font-headline text-4xl font-bold text-yellow-300" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.7)'}}>
                                 ₹{player.bidAmount.toLocaleString()}
                             </p>
                         </div>
