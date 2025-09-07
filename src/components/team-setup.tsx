@@ -28,14 +28,18 @@ export default function TeamSetup() {
   
   const [step, setStep] = useState<Step>('config');
   const [numTeams, setNumTeams] = useState(4);
-  const [initialPurse, setInitialPurse] = useState(100000);
-  const [teams, setTeams] = useState<Partial<Team>[]>([]);
+  const [teams, setTeams] = useState<Partial<Team & { initialPurse: number } >[]>([]);
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
 
-  const handleTeamDataChange = (field: keyof Team, value: string | number) => {
+  const handleTeamDataChange = (field: keyof Team | 'initialPurse', value: string | number) => {
     const newTeams = [...teams];
     const currentTeam = newTeams[currentTeamIndex] || { id: currentTeamIndex };
-    newTeams[currentTeamIndex] = { ...currentTeam, [field]: value };
+    
+    if (field === 'initialPurse') {
+        newTeams[currentTeamIndex] = { ...currentTeam, initialPurse: Number(value) };
+    } else {
+        newTeams[currentTeamIndex] = { ...currentTeam, [field]: value };
+    }
     setTeams(newTeams);
   };
 
@@ -56,25 +60,25 @@ export default function TeamSetup() {
   };
   
   const handleStartDetails = () => {
-    if (numTeams <= 0 || initialPurse <= 0) {
+    if (numTeams <= 0) {
         toast({
             title: "Invalid Configuration",
-            description: "Please enter a valid number of teams and initial purse.",
+            description: "Please enter a valid number of teams.",
             variant: "destructive",
         });
         return;
     }
-    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i })));
+    setTeams(Array.from({ length: numTeams }, (_, i) => ({ id: i, initialPurse: 100000 })));
     setCurrentTeamIndex(0);
     setStep('details');
   };
 
   const handleNextTeam = () => {
     const currentTeam = teams[currentTeamIndex];
-    if (!currentTeam?.name || !currentTeam?.logo) {
+    if (!currentTeam?.name || !currentTeam?.logo || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
       toast({
         title: "Incomplete Details",
-        description: "Please provide a name and logo for the current team.",
+        description: "Please provide a name, logo, and a valid purse amount for the current team.",
         variant: "destructive",
       });
       return;
@@ -92,10 +96,10 @@ export default function TeamSetup() {
 
   const handleFinishSetup = () => {
     const currentTeam = teams[currentTeamIndex];
-    if (!currentTeam?.name || !currentTeam?.logo) {
+    if (!currentTeam?.name || !currentTeam?.logo || !currentTeam.initialPurse || currentTeam.initialPurse <= 0) {
       toast({
         title: "Incomplete Details",
-        description: "Please provide a name and logo for the final team.",
+        description: "Please provide a name, logo, and a valid purse for the final team.",
         variant: "destructive",
       });
       return;
@@ -107,8 +111,8 @@ export default function TeamSetup() {
           id: index,
           name: team.name!,
           logo: team.logo!,
-          initialPurse: initialPurse,
-          purse: initialPurse,
+          initialPurse: team.initialPurse!,
+          purse: team.initialPurse!,
           players: [],
         } as Team)
     );
@@ -141,16 +145,6 @@ export default function TeamSetup() {
                             onChange={(e) => setNumTeams(parseInt(e.target.value) || 0)}
                             min="1"
                             placeholder="e.g., 4"
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="initial-purse"><Wallet className='inline-block mr-2 h-4 w-4' />Initial Purse (for all teams)</Label>                    
-                        <Input
-                            id="initial-purse"
-                            type="number"
-                            value={initialPurse || ''}
-                            onChange={e => setInitialPurse(parseInt(e.target.value, 10) || 0)}
-                            placeholder="e.g., 100000"
                         />
                     </div>
                 </CardContent>
@@ -204,6 +198,16 @@ export default function TeamSetup() {
                       onChange={handleLogoUpload}
                     />
                   </div>
+                   <div className="space-y-2">
+                        <Label htmlFor="initial-purse"><Wallet className='inline-block mr-2 h-4 w-4' />Initial Purse</Label>                    
+                        <Input
+                            id="initial-purse"
+                            type="number"
+                            value={currentTeam?.initialPurse || ''}
+                            onChange={e => handleTeamDataChange('initialPurse', parseInt(e.target.value, 10) || 0)}
+                            placeholder="e.g., 100000"
+                        />
+                    </div>
             </CardContent>
             <CardFooter>
                 {isFinalTeam ? (
