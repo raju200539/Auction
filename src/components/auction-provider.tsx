@@ -158,7 +158,8 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     let currentUnsold = unsoldPlayers;
     if (isSkip && currentPlayer) {
       currentUnsold = [...unsoldPlayers, currentPlayer];
-      updateState({ unsoldPlayers: currentUnsold });
+      // Note: We don't update state here immediately to avoid multiple re-renders.
+      // We'll update it along with the player index change.
     }
 
     const nextIndex = currentPlayerIndex + 1;
@@ -166,12 +167,16 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
     const isTransitioningToNormal = currentPlayer?.isElite && nextPlayer && !nextPlayer.isElite;
     if (isTransitioningToNormal) {
-      updateState({ 
+      setAuctionState(prevState => ({
+        ...prevState,
+        currentPlayerIndex: nextIndex,
+        lastTransaction: null,
+        unsoldPlayers: isSkip && currentPlayer ? [...prevState.unsoldPlayers, currentPlayer] : prevState.unsoldPlayers,
         interstitialMessage: {
           title: 'Normal Players Round',
           description: 'All elite players have been auctioned. The normal player list will now begin.',
         }
-      });
+      }));
       return;
     }
 
@@ -199,10 +204,12 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    updateState({ 
+    setAuctionState(prevState => ({
+      ...prevState,
       lastTransaction: null,
       currentPlayerIndex: nextIndex,
-    });
+      unsoldPlayers: isSkip && currentPlayer ? [...prevState.unsoldPlayers, currentPlayer] : prevState.unsoldPlayers,
+    }));
   }
 
   const skipPlayer = () => {
@@ -246,37 +253,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearInterstitial = useCallback(() => {
-     setAuctionState(prevState => {
-      const { players, currentPlayerIndex, lastTransaction } = prevState;
-
-      // When the interstitial is for the start of a new round (normal or skipped),
-      // we don't want to advance the player index. We want to start at index 0 of the new list.
-      // The provider has already set the new player list and reset the index to 0.
-      if (prevState.interstitialMessage?.title.includes('Round')) {
-         return { ...prevState, interstitialMessage: null, lastTransaction: null };
-      }
-      
-      // This path should ideally not be taken with the new logic, but kept as a fallback.
-      // It handles advancing a player after an interstitial, which is not the current flow.
-      let nextIndex = currentPlayerIndex;
-      if (lastTransaction === null && currentPlayerIndex === 0) {
-         // Do nothing, we want to show player 0
-      } else {
-        nextIndex = currentPlayerIndex + 1;
-      }
-      
-      const isTransitioningToSkippedRound = nextIndex >= players.length;
-      if (isTransitioningToSkippedRound) {
-         return { ...prevState, interstitialMessage: null };
-      }
-
-      return {
-        ...prevState,
-        interstitialMessage: null,
-        currentPlayerIndex: nextIndex,
-        lastTransaction: null,
-      };
-    });
+     setAuctionState(prevState => ({ ...prevState, interstitialMessage: null }));
   }, []);
 
   if (!isLoaded || auctionState.stage === 'loading') {
