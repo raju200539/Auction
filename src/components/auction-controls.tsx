@@ -26,7 +26,7 @@ export default function AuctionControls() {
   const rowVirtualizer = useVirtualizer({
     count: teams.length,
     getScrollElement: () => parentRef.current,
-    itemSize: () => 32, // Wrapped in a function
+    estimateSize: () => 32,
     overscan: 5,
   });
 
