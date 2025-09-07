@@ -145,60 +145,53 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
 
     setAuctionState(prevState => {
-      // If we are in the skipped round, we need to remove the assigned player from the `players` list
-      const newPlayers = prevState.isSkippedRoundActive
-        ? prevState.players.filter(p => p.id !== playerToAssign.id)
-        : prevState.players;
+      let newPlayers = prevState.players;
+      let newPlayerIndex = prevState.currentPlayerIndex;
+      
+      if (prevState.isSkippedRoundActive) {
+        newPlayers = prevState.players.filter(p => p.id !== playerToAssign.id);
+        if (newPlayerIndex >= newPlayers.length) {
+          newPlayerIndex = Math.max(0, newPlayers.length - 1);
+        }
+      }
 
-      // When assigning during skipped round, player index might need to be adjusted
-      // but since we remove the element, the next element will shift to the current index.
-      // so we don't increment it here. `nextPlayer` will handle moving forward.
-      const newCurrentPlayerIndex = prevState.isSkippedRoundActive && newPlayers.length <= prevState.currentPlayerIndex
-        ? newPlayers.length -1
-        : prevState.currentPlayerIndex;
+      const isAuctionOver = !prevState.isSkippedRoundActive && newPlayerIndex + 1 >= newPlayers.length && prevState.unsoldPlayers.length === 0;
+      const isSkippedRoundOver = prevState.isSkippedRoundActive && newPlayers.length === 0;
 
-
+      if (isAuctionOver || isSkippedRoundOver) {
+        setStage('summary');
+        return {
+          ...prevState,
+          teams: newTeams,
+          players: newPlayers,
+          lastTransaction: { teamId, player: assignedPlayer },
+        };
+      }
+      
       return {
         ...prevState,
         teams: newTeams,
-        lastTransaction: { teamId, player: assignedPlayer },
         players: newPlayers,
-        currentPlayerIndex: newCurrentPlayerIndex,
-        // We set unsold players to empty because a player from that list has now been sold.
-        unsoldPlayers: prevState.isSkippedRoundActive ? [] : prevState.unsoldPlayers
+        currentPlayerIndex: newPlayerIndex,
+        lastTransaction: { teamId, player: assignedPlayer },
       }
     });
   };
-
-  const handleNextPlayer = (isSkip: boolean) => {
+  
+  const handleNextPlayer = () => {
     setAuctionState(prevState => {
-        const { players, currentPlayerIndex, unsoldPlayers, isSkippedRoundActive, lastTransaction } = prevState;
+        const { players, currentPlayerIndex, isSkippedRoundActive } = prevState;
+
+        const nextIndex = currentPlayerIndex + 1;
         const currentPlayer = players[currentPlayerIndex];
 
-        let currentUnsold = unsoldPlayers;
-        if (isSkip && currentPlayer) {
-            currentUnsold = [...unsoldPlayers, currentPlayer];
-        }
-
-        const wasPlayerAssignedInSkippedRound = !isSkip && isSkippedRoundActive && lastTransaction;
-        if (wasPlayerAssignedInSkippedRound && players.length === 0) {
-            setStage('summary');
-            return { ...prevState, lastTransaction: null };
-        }
-
-        const nextIndex = (isSkippedRoundActive && wasPlayerAssignedInSkippedRound)
-          ? currentPlayerIndex
-          : currentPlayerIndex + 1;
-        
-        const nextPlayer = players[nextIndex];
-
-        const isTransitioningToNormal = currentPlayer?.isElite && nextPlayer && !nextPlayer.isElite;
+        // Transition from Elite to Normal
+        const isTransitioningToNormal = currentPlayer?.isElite && players[nextIndex] && !players[nextIndex].isElite;
         if (isTransitioningToNormal) {
             return {
                 ...prevState,
                 currentPlayerIndex: nextIndex,
                 lastTransaction: null,
-                unsoldPlayers: isSkip && currentPlayer ? [...unsoldPlayers, currentPlayer] : unsoldPlayers,
                 interstitialMessage: {
                     title: 'Normal Players Round',
                     description: 'All elite players have been auctioned. The normal player list will now begin.',
@@ -206,9 +199,10 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
             };
         }
 
-        const isTransitioningToSkippedRound = nextIndex >= players.length && currentUnsold.length > 0 && !isSkippedRoundActive;
+        // Transition to Skipped Round
+        const isTransitioningToSkippedRound = !isSkippedRoundActive && nextIndex >= players.length && prevState.unsoldPlayers.length > 0;
         if (isTransitioningToSkippedRound) {
-            const shuffledUnsold = shuffleArray(currentUnsold);
+            const shuffledUnsold = shuffleArray(prevState.unsoldPlayers);
             return {
                 ...prevState,
                 players: shuffledUnsold,
@@ -222,28 +216,56 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
                 }
             };
         }
-
-        if (nextIndex >= players.length && (currentUnsold.length === 0 || isSkippedRoundActive)) {
-            setStage('summary');
-            return { ...prevState, lastTransaction: null };
-        }
-
+        
+        // This is a normal "next player" action
         return {
             ...prevState,
             lastTransaction: null,
             currentPlayerIndex: nextIndex,
-            unsoldPlayers: isSkip && currentPlayer ? [...unsoldPlayers, currentPlayer] : unsoldPlayers,
         };
     });
-}
-
+  }
 
   const skipPlayer = () => {
-    handleNextPlayer(true);
+    const { players, currentPlayerIndex, unsoldPlayers, isSkippedRoundActive } = auctionState;
+    const playerToSkip = players[currentPlayerIndex];
+    if (!playerToSkip) return;
+
+    const newUnsoldPlayers = [...unsoldPlayers, playerToSkip];
+    
+    // Check if this is the last player in the main round or the skipped round
+    const isLastPlayerInMainRound = !isSkippedRoundActive && currentPlayerIndex + 1 >= players.length;
+    const isLastPlayerInSkippedRound = isSkippedRoundActive && currentPlayerIndex + 1 >= players.length;
+
+    if (isLastPlayerInMainRound && newUnsoldPlayers.length > 0) {
+      // Transition to skipped round
+       const shuffledUnsold = shuffleArray(newUnsoldPlayers);
+        updateState({
+            players: shuffledUnsold,
+            unsoldPlayers: [],
+            currentPlayerIndex: 0,
+            lastTransaction: null,
+            isSkippedRoundActive: true,
+            interstitialMessage: {
+                title: 'Skipped Players Round',
+                description: `All players have been auctioned. Re-auctioning ${shuffledUnsold.length} previously skipped players.`,
+            }
+        });
+    } else if (isLastPlayerInMainRound || isLastPlayerInSkippedRound) {
+      // End of auction
+      setStage('summary');
+    } else {
+      // Just go to the next player
+      updateState({
+          unsoldPlayers: newUnsoldPlayers,
+          currentPlayerIndex: currentPlayerIndex + 1,
+          lastTransaction: null,
+      });
+    }
   };
   
   const nextPlayer = () => {
-    handleNextPlayer(false);
+     handleNextPlayer();
   };
 
   const undoLastAssignment = () => {
@@ -263,23 +285,23 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
 
     setAuctionState(prevState => {
-      // If we are in the skipped round, we need to add the player back to the players list
-      // at the same index it was removed from.
-      const newPlayers = prevState.isSkippedRoundActive
-        ? [
-            ...prevState.players.slice(0, prevState.currentPlayerIndex),
-            player,
-            ...prevState.players.slice(prevState.currentPlayerIndex)
+      let newPlayers = prevState.players;
+      if (prevState.isSkippedRoundActive) {
+          // If we are in the skipped round, add the player back to the list
+          // at the same index it was removed from.
+          newPlayers = [
+              ...prevState.players.slice(0, prevState.currentPlayerIndex),
+              player,
+              ...prevState.players.slice(prevState.currentPlayerIndex)
           ]
-        : prevState.players;
+      }
+      // If not in skipped round, the player is already in the list at currentPlayerIndex, so no change needed.
       
       return {
         ...prevState,
         teams: newTeams,
-        lastTransaction: null,
         players: newPlayers,
-        // We don't need to change `unsoldPlayers` on undo.
-        // If it was a skipped round, the player is now back in the `players` list for that round.
+        lastTransaction: null,
       }
     });
   };
@@ -322,3 +344,5 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     </AuctionContext.Provider>
   );
 }
+
+    
