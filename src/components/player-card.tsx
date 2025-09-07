@@ -83,7 +83,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                               <AvatarImage src={team.logo} alt={team.name} className="object-contain"/>
                               <AvatarFallback className="bg-transparent text-xs">{team.name.substring(0,3)}</AvatarFallback>
                           </Avatar>
-                          <p className="font-headline text-3xl font-bold text-white uppercase leading-tight tracking-wider">
+                          <p className="font-headline text-3xl font-bold text-white uppercase tracking-wider">
                               {team.name}
                           </p>
                       </div>
@@ -114,4 +114,3 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     </div>
   );
 }
-
