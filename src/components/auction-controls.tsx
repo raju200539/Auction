@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { ScrollArea } from './ui/scroll-area';
 
 export default function AuctionControls() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
