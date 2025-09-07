@@ -1,39 +1,39 @@
-# 1. Installer Stage: Install dependencies and build the application
-FROM node:18-alpine AS installer
-WORKDIR /app
 
-# Copy package.json and package-lock.json to leverage Docker cache
-COPY package.json package-lock.json* ./
+# Base image
+FROM node:18-alpine AS base
+
+WORKDIR /app
+# Install dependencies
+COPY package*.json ./
 RUN npm ci
 
-# Copy the rest of the application source code
+# Builder image
+FROM base AS builder
+WORKDIR /app
+COPY --from=base /app/node_modules ./node_modules
 COPY . .
-
-# Build the Next.js application
+# "dev" is the folder with your code
 RUN npm run build
 
-# 2. Runner Stage: Create a minimal production image
-FROM node:18-alpine AS runner
+# Production image
+FROM base
 WORKDIR /app
-
-# Set environment variable for production
 ENV NODE_ENV=production
 
-# Copy the standalone output from the installer stage
-COPY --from=installer /app/public ./public
-COPY --from=installer --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/.next/static ./.next/static
+# User and group for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
 
-# Create a non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Copy built assets
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# Set the user to the non-root user
+# Conditionally copy public folder only if it exists
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-
-# Start the Next.js application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
