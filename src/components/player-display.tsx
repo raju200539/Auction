@@ -39,7 +39,7 @@ export default function PlayerDisplay() {
             src={photoUrl}
             alt={currentPlayer.name}
             fill
-            className="object-cover"
+            className="object-cover object-top"
             data-ai-hint="player photo"
             sizes="(max-width: 1280px) 100vw, 50vw"
         />
