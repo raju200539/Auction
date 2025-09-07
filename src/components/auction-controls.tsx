@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Tag, SkipForward, Edit, Undo, CheckCircle2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function AuctionControls() {
   const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
@@ -19,6 +20,7 @@ export default function AuctionControls() {
   
   const currentPlayer = players[currentPlayerIndex];
   const playerAssigned = !!lastTransaction;
+  const assignedTeam = teams.find(t => t.id === lastTransaction?.teamId);
 
   useEffect(() => {
     // Reset controls when the current player changes, as long as it's not due to an undo operation
@@ -102,15 +104,19 @@ export default function AuctionControls() {
                 />
                 </div>
             </div>
-            {playerAssigned && lastTransaction && (
-            <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-2">
+            {playerAssigned && lastTransaction && assignedTeam && (
+            <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-3">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                 <Avatar className="h-16 w-16 border-2" style={{ borderColor: assignedTeam.color }}>
+                    <AvatarImage src={assignedTeam.logo} alt={assignedTeam.name} />
+                    <AvatarFallback>{assignedTeam.name.charAt(0)}</AvatarFallback>
+                </Avatar>
                 <div>
                   <p className="font-bold text-lg text-green-800 dark:text-green-200">
                     Assignment Successful!
                   </p>
                   <p className="text-green-700 dark:text-green-300">
-                    <span className="font-semibold">{lastTransaction.player.name}</span> assigned to <span className="font-semibold">{teams.find(t => t.id === lastTransaction.teamId)?.name}</span> for {lastTransaction.player.bidAmount.toLocaleString()}.
+                    <span className="font-semibold">{lastTransaction.player.name}</span> assigned to <span className="font-semibold">{assignedTeam.name}</span> for {lastTransaction.player.bidAmount.toLocaleString()}.
                   </p>
                 </div>
             </div>
