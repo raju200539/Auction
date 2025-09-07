@@ -46,22 +46,22 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const savedState = localStorage.getItem('auctionState');
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        // Reset interstitial message on load
-        parsedState.interstitialMessage = null; 
-        if (parsedState.stage) {
-          setAuctionState(parsedState);
-        } else {
-          setAuctionState(getInitialState());
-        }
-      } catch (e) {
-        console.error("Failed to parse state from localStorage", e);
+    try {
+      const savedState = localStorage.getItem('auctionState');
+      if (savedState) {
+          const parsedState = JSON.parse(savedState);
+          // Reset interstitial message on load
+          parsedState.interstitialMessage = null; 
+          if (parsedState.stage) {
+            setAuctionState(parsedState);
+          } else {
+            setAuctionState(getInitialState());
+          }
+      } else {
         setAuctionState(getInitialState());
       }
-    } else {
+    } catch (e) {
+      console.error("Failed to parse state from localStorage", e);
       setAuctionState(getInitialState());
     }
     setIsLoaded(true);
@@ -69,7 +69,11 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (isLoaded && auctionState.stage !== 'loading') {
-      localStorage.setItem('auctionState', JSON.stringify(auctionState));
+      try {
+        localStorage.setItem('auctionState', JSON.stringify(auctionState));
+      } catch (e) {
+        console.error("Failed to save state to localStorage", e);
+      }
     }
   }, [auctionState, isLoaded]);
 
@@ -83,17 +87,13 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
   const setStage = useCallback((stage: AuctionStage) => {
     if (stage === 'summary' && auctionState.teams.length > 0) {
-        const completedAuctionId = localStorage.getItem('completedAuctionId');
-        const currentAuctionDate = new Date().toISOString();
-
-        if (completedAuctionId !== currentAuctionDate) {
-            addPastAuction({
-                id: currentAuctionDate,
-                date: currentAuctionDate,
-                teams: auctionState.teams
-            });
-            localStorage.setItem('completedAuctionId', currentAuctionDate);
-        }
+        const currentAuctionId = new Date().toISOString();
+        const pastAuctionData = {
+          id: currentAuctionId,
+          date: currentAuctionId,
+          teams: auctionState.teams
+        };
+        addPastAuction(pastAuctionData);
     }
     updateState({ stage });
   }, [auctionState.teams, addPastAuction]);
@@ -103,10 +103,13 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     const shuffledElite = shuffleArray(elite);
     const shuffledNormal = shuffleArray(normal);
     
-    const elitePlayers = shuffledElite.map((p, i) => ({ ...p, id: i, isElite: true }));
-    const normalPlayers = shuffledNormal.map((p, i) => ({ ...p, id: elite.length + i, isElite: false }));
+    const elitePlayers = shuffledElite.map(p => ({ ...p, isElite: true }));
+    const normalPlayers = shuffledNormal.map(p => ({ ...p, isElite: false }));
 
-    const allPlayers = [...elitePlayers, ...normalPlayers];
+    const allPlayers = [...elitePlayers, ...normalPlayers].map((p, i) => ({
+      ...p,
+      id: i, // Assign a unique ID across all players
+    }));
     
     let interstitialMessage = null;
     if (elitePlayers.length > 0) {
@@ -338,7 +341,6 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
   const restartAuction = useCallback(() => {
     localStorage.removeItem('auctionState');
-    localStorage.removeItem('completedAuctionId');
     setAuctionState(getInitialState());
   }, []);
 
