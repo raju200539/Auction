@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, type ReactNode, useCallback, useEffect } from 'react';
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { AuctionStage, Player, PlayerWithId, Team } from '@/types';
 import { AuctionContext } from '@/hooks/use-auction';
 
@@ -16,7 +14,30 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-const AUCTION_DOC_ID = "current-auction";
+const getInitialState = (): AuctionState => {
+  if (typeof window !== 'undefined') {
+    const savedState = localStorage.getItem('auctionState');
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        // Basic validation to make sure it's not a completely invalid state
+        if (parsedState.stage) {
+          return parsedState;
+        }
+      } catch (e) {
+        console.error("Failed to parse state from localStorage", e);
+      }
+    }
+  }
+  return {
+    stage: 'team-setup',
+    teams: [],
+    players: [],
+    currentPlayerIndex: 0,
+    unsoldPlayers: [],
+    lastTransaction: null,
+  };
+}
 
 interface AuctionState {
   stage: AuctionStage;
@@ -27,56 +48,32 @@ interface AuctionState {
   lastTransaction: { teamId: number, player: PlayerWithId & { bidAmount: number } } | null;
 }
 
-const initialState: AuctionState = {
-  stage: 'team-setup',
-  teams: [],
-  players: [],
-  currentPlayerIndex: 0,
-  unsoldPlayers: [],
-  lastTransaction: null,
-};
-
 export function AuctionProvider({ children }: { children: ReactNode }) {
-  const [auctionState, setAuctionState] = useState<AuctionState | null>(null);
+  const [auctionState, setAuctionState] = useState<AuctionState>(getInitialState);
 
-  // Subscribe to Firestore document
   useEffect(() => {
-    const docRef = doc(db, 'auctions', AUCTION_DOC_ID);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setAuctionState(docSnap.data() as AuctionState);
-      } else {
-        // If doc doesn't exist, create it with initial state
-        setDoc(docRef, initialState).then(() => setAuctionState(initialState));
-      }
-    });
+    localStorage.setItem('auctionState', JSON.stringify(auctionState));
+  }, [auctionState]);
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
-  const updateState = async (updates: Partial<AuctionState>) => {
-    const docRef = doc(db, 'auctions', AUCTION_DOC_ID);
-    const currentState = auctionState ?? (await getDoc(docRef)).data() as AuctionState ?? initialState;
-    const newState = { ...currentState, ...updates };
-    await setDoc(docRef, newState);
+  const updateState = (updates: Partial<AuctionState>) => {
+    setAuctionState(prevState => ({ ...prevState, ...updates }));
   };
 
-  const handleSetTeams = useCallback(async (teams: Team[]) => {
-    await updateState({ teams, stage: 'player-upload' });
+  const handleSetTeams = useCallback((teams: Team[]) => {
+    updateState({ teams, stage: 'player-upload' });
   }, []);
 
-  const setStage = useCallback(async (stage: AuctionStage) => {
-    await updateState({ stage });
+  const setStage = useCallback((stage: AuctionStage) => {
+    updateState({ stage });
   }, []);
 
-  const handleSetPlayers = useCallback(async (elite: Player[], normal: Player[]) => {
+  const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {
     const shuffledElite = shuffleArray(elite);
     const shuffledNormal = shuffleArray(normal);
     const allPlayers = [...shuffledElite, ...shuffledNormal].map(
       (p, i) => ({ ...p, id: i })
     );
-    await updateState({
+    updateState({
       players: allPlayers,
       unsoldPlayers: [],
       currentPlayerIndex: 0,
@@ -85,11 +82,8 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const assignPlayer = async (teamId: number, bidAmount: number) => {
-    if (!auctionState) return;
-    const { players, currentPlayerIndex } = auctionState;
-    
-    const playerToAssign = players[currentPlayerIndex];
+  const assignPlayer = (teamId: number, bidAmount: number) => {
+    const playerToAssign = auctionState.players[auctionState.currentPlayerIndex];
     if (!playerToAssign) return;
 
     const assignedPlayer = { ...playerToAssign, bidAmount };
@@ -105,57 +99,55 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
 
-    const newPlayers = [...players];
-    newPlayers.splice(currentPlayerIndex, 1);
-    
-    await updateState({
+    updateState({
       teams: newTeams,
-      players: newPlayers,
       lastTransaction: { teamId, player: assignedPlayer },
     });
   };
 
-  const skipPlayer = async () => {
-    if (!auctionState) return;
-    const { players, currentPlayerIndex, unsoldPlayers } = auctionState;
-
-    const playerToSkip = players[currentPlayerIndex];
-    const newUnsold = playerToSkip ? [...unsoldPlayers, playerToSkip] : unsoldPlayers;
-
-    const newPlayers = [...players];
-    newPlayers.splice(currentPlayerIndex, 1);
-
-    await updateState({
-      players: newPlayers,
+  const skipPlayer = () => {
+    const newUnsold = [
+      ...auctionState.unsoldPlayers,
+      auctionState.players[auctionState.currentPlayerIndex],
+    ];
+    updateState({
       unsoldPlayers: newUnsold,
-      lastTransaction: null,
+      lastTransaction: null, // Clear last transaction on skip
+      currentPlayerIndex: auctionState.currentPlayerIndex + 1,
     });
-    checkRoundEnd({ ...auctionState, players: newPlayers, unsoldPlayers: newUnsold });
+    checkRoundEnd();
   };
   
-  const nextPlayer = async () => {
-    if (!auctionState) return;
-    await updateState({ lastTransaction: null });
-    checkRoundEnd(auctionState);
+  const nextPlayer = () => {
+    updateState({
+      lastTransaction: null,
+      currentPlayerIndex: auctionState.currentPlayerIndex + 1,
+    });
+    checkRoundEnd();
   };
   
-  const checkRoundEnd = async (state: AuctionState) => {
-    if (state.currentPlayerIndex >= state.players.length) {
-      if (state.unsoldPlayers.length > 0) {
-        const shuffledUnsold = shuffleArray(state.unsoldPlayers);
-        await updateState({
-          players: shuffledUnsold,
-          unsoldPlayers: [],
-          currentPlayerIndex: 0,
-        });
-      } else {
-        await updateState({ stage: 'summary' });
+  const checkRoundEnd = () => {
+    setAuctionState(prevState => {
+      if (prevState.currentPlayerIndex +1 >= prevState.players.length) {
+        if (prevState.unsoldPlayers.length > 0) {
+          const shuffledUnsold = shuffleArray(prevState.unsoldPlayers);
+          return {
+            ...prevState,
+            players: shuffledUnsold,
+            unsoldPlayers: [],
+            currentPlayerIndex: 0,
+            lastTransaction: null,
+          };
+        } else {
+          return { ...prevState, stage: 'summary' };
+        }
       }
-    }
+      return prevState;
+    })
   };
 
-  const undoLastAssignment = async () => {
-    if (!auctionState || !auctionState.lastTransaction) return;
+  const undoLastAssignment = () => {
+    if (!auctionState.lastTransaction) return;
 
     const { teamId, player } = auctionState.lastTransaction;
 
@@ -169,28 +161,29 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       }
       return team;
     });
-
-    const newPlayers = [...auctionState.players];
-    newPlayers.splice(auctionState.currentPlayerIndex, 0, player);
-
-    await updateState({
+    
+    updateState({
       teams: newTeams,
-      players: newPlayers,
       lastTransaction: null,
     });
   };
   
-  const startAuction = useCallback(async () => {
-    await updateState({ stage: 'player-upload' });
+  const startAuction = useCallback(() => {
+    updateState({ stage: 'player-upload' });
   }, []);
 
-  const restartAuction = useCallback(async () => {
-    await updateState(initialState);
+  const restartAuction = useCallback(() => {
+    localStorage.removeItem('auctionState');
+    setAuctionState({
+      stage: 'team-setup',
+      teams: [],
+      players: [],
+      currentPlayerIndex: 0,
+      unsoldPlayers: [],
+      lastTransaction: null,
+    });
   }, []);
 
-  if (!auctionState) {
-    return null; // Or a loading spinner
-  }
 
   return (
     <AuctionContext.Provider
