@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Tag, SkipForward, Edit, Undo, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Tag, SkipForward, Edit, Undo, CheckCircle2, Trophy } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function AuctionControls() {
-  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction } = useAuction();
+  const { teams, players, currentPlayerIndex, assignPlayer, nextPlayer, skipPlayer, undoLastAssignment, lastTransaction, setStage } = useAuction();
   const { toast } = useToast();
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
   const [bidAmount, setBidAmount] = useState<number | ''>('');
@@ -59,11 +59,17 @@ export default function AuctionControls() {
 
   if (!currentPlayer) {
     return (
-      <Card className="h-full flex items-center justify-center">
-        <CardHeader>
+      <Card className="h-full flex flex-col items-center justify-center">
+        <CardHeader className="text-center">
           <CardTitle>No Players Left</CardTitle>
           <CardDescription>All players have been auctioned.</CardDescription>
         </CardHeader>
+        <CardContent>
+            <Button onClick={() => setStage('summary')} size="lg">
+                <Trophy className="mr-2 h-4 w-4" />
+                Go to Summary
+            </Button>
+        </CardContent>
       </Card>
     );
   }
@@ -106,7 +112,7 @@ export default function AuctionControls() {
                   </div>
               </div>
             ) : lastTransaction && assignedTeam && (
-            <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-3">
+            <div className="p-4 rounded-lg bg-green-100 dark:bg-green-900/50 border-2 border-dashed border-green-300 dark:border-green-700 flex flex-col items-center text-center gap-3">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
                  <Avatar className="h-16 w-16 border-2" style={{ borderColor: assignedTeam.color }}>
                     <AvatarImage src={assignedTeam.logo} alt={assignedTeam.name} />
