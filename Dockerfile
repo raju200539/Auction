@@ -1,39 +1,63 @@
-
-# Base image
+# --- Base Stage ---
+# Use the official Node.js image as a base.
+# Using a specific version is good practice for reproducibility.
 FROM node:18-alpine AS base
 
+# Set the working directory in the container.
 WORKDIR /app
-# Install dependencies
-COPY package*.json ./
+
+# --- Dependencies Stage ---
+# This stage is dedicated to installing dependencies, and its results can be cached.
+FROM base AS deps
+
+# Copy package.json and package-lock.json to the working directory.
+COPY package.json package-lock.json* ./
+
+# Install dependencies.
 RUN npm ci
 
-# Builder image
+# --- Builder Stage ---
+# This stage builds the Next.js application.
 FROM base AS builder
-WORKDIR /app
-COPY --from=base /app/node_modules ./node_modules
+
+# Copy dependencies from the 'deps' stage.
+COPY --from=deps /app/node_modules ./node_modules
+# Copy the rest of the application code.
 COPY . .
-# "dev" is the folder with your code
+
+# Ensure the public directory exists, even if it's empty.
+# This prevents the final COPY command from failing if there are no static assets.
+RUN mkdir -p public
+
+# Build the Next.js application.
 RUN npm run build
 
-# Production image
-FROM base
+# --- Runner Stage ---
+# This is the final, small, and optimized stage for running the application.
+FROM base AS runner
+
 WORKDIR /app
+
+# Set the environment to production.
 ENV NODE_ENV=production
 
-# User and group for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# Create a non-root user and group for security purposes.
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copy built assets
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Copy the standalone output from the builder stage.
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Conditionally copy public folder only if it exists
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-
+# Set the user to the non-root user.
 USER nextjs
 
+# Expose the port the app will run on.
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Set the port environment variable.
+ENV PORT 3000
+
+# The command to start the application.
+CMD ["node", "server.js"]
