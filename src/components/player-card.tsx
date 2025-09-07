@@ -20,12 +20,6 @@ const getPlaceholderImageUrl = (position: string) => {
   return `https://picsum.photos/seed/${seed}/600/800`;
 };
 
-// Function to lighten or darken a hex color
-const adjustColor = (color: string, amount: number) => {
-  if (!color) return '#000000';
-  return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
-}
-
 export function PlayerCard({ player, team }: PlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +43,6 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
   };
   
   const teamColor = team.color || '#1D4ED8'; // Fallback to a default blue
-  const gradientColor = adjustColor(teamColor, -40); // Darken for gradient effect
 
   return (
     <div className="space-y-2">
@@ -59,11 +52,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
       >
         <div className="flex h-full">
           <div
-            className="w-2/5 relative h-full"
-            style={{
-              backgroundColor: teamColor,
-              backgroundImage: `linear-gradient(to bottom right, ${teamColor}, ${gradientColor})`,
-            }}
+            className="w-2/5 relative h-full bg-primary/20"
           >
             <Image
               src={cardImageSrc}
@@ -85,8 +74,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             <div className="text-center">
               <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Position</p>
               <p
-                className="font-headline text-3xl font-bold uppercase"
-                style={{ color: teamColor }}
+                className="font-headline text-3xl font-bold uppercase text-primary"
               >
                 {player.position}
               </p>
@@ -95,7 +83,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
             <div className="text-center">
                <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Sold To</p>
                <div className="flex flex-col items-center gap-2 mt-1">
-                <Avatar className="h-20 w-20 border-4" style={{borderColor: teamColor}}>
+                <Avatar className="h-20 w-20 border-4 border-primary/50">
                   <AvatarImage src={team.logo} alt={team.name} />
                   <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -107,7 +95,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
 
             <div className="text-center">
               <p className="font-headline text-muted-foreground text-sm uppercase tracking-wider">Final Bid</p>
-              <p className="font-headline text-4xl font-bold" style={{ color: teamColor }}>
+              <p className="font-headline text-4xl font-bold text-primary">
                 ₹{player.bidAmount.toLocaleString()}
               </p>
             </div>
