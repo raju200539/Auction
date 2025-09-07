@@ -145,15 +145,25 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
 
     setAuctionState(prevState => {
-      const updatedUnsoldPlayers = prevState.isSkippedRoundActive 
+      // If we are in the skipped round, we need to remove the assigned player from the `players` list
+      const newPlayers = prevState.isSkippedRoundActive
         ? prevState.players.filter(p => p.id !== playerToAssign.id)
-        : prevState.unsoldPlayers;
+        : prevState.players;
+
+      const newCurrentPlayerIndex = prevState.isSkippedRoundActive
+        ? prevState.currentPlayerIndex // The index will be adjusted down because an item was removed.
+        : prevState.currentPlayerIndex;
 
       return {
         ...prevState,
         teams: newTeams,
         lastTransaction: { teamId, player: assignedPlayer },
-        unsoldPlayers: updatedUnsoldPlayers
+        players: newPlayers,
+        // When assigning during skipped round, player index might need to be adjusted
+        // but since we remove the element, the next element will shift to the current index.
+        // so we don't increment it here. `nextPlayer` will handle moving forward.
+        // We set unsold players to empty because a player from that list has now been sold.
+        unsoldPlayers: prevState.isSkippedRoundActive ? [] : prevState.unsoldPlayers
       }
     });
   };
@@ -166,8 +176,10 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     if (isSkip && currentPlayer) {
       currentUnsold = [...unsoldPlayers, currentPlayer];
     }
-
-    const nextIndex = currentPlayerIndex + 1;
+    
+    // In skipped round, players list shrinks on assignment, so index does not increment.
+    // Otherwise, we increment the index.
+    const nextIndex = isSkippedRoundActive && !isSkip ? currentPlayerIndex : currentPlayerIndex + 1;
     const nextPlayer = players[nextIndex];
 
     const isTransitioningToNormal = currentPlayer?.isElite && nextPlayer && !nextPlayer.isElite;
@@ -242,19 +254,23 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
     });
 
     setAuctionState(prevState => {
-      const newUnsold = prevState.isSkippedRoundActive 
-        ? [player, ...prevState.players].sort((a,b) => a.id - b.id)
-        : prevState.unsoldPlayers;
+      // If we are in the skipped round, we need to add the player back to the players list
+      // at the same index it was removed from.
+      const newPlayers = prevState.isSkippedRoundActive
+        ? [
+            ...prevState.players.slice(0, prevState.currentPlayerIndex),
+            player,
+            ...prevState.players.slice(prevState.currentPlayerIndex)
+          ]
+        : prevState.players;
       
-      const newPlayers = prevState.isSkippedRoundActive ? newUnsold : prevState.players;
-
       return {
         ...prevState,
         teams: newTeams,
         lastTransaction: null,
         players: newPlayers,
-        // If we undo during skipped round, we need to potentially add the player back to the list
-        unsoldPlayers: prevState.isSkippedRoundActive ? [] : prevState.unsoldPlayers,
+        // We don't need to change `unsoldPlayers` on undo.
+        // If it was a skipped round, the player is now back in the `players` list for that round.
       }
     });
   };
