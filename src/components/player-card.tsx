@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef } from 'react';
@@ -78,7 +79,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                       <div className="w-full border-b border-yellow-400/50"></div>
                       <p className="font-body text-yellow-400/80 text-xs uppercase tracking-wider">Sold To:</p>
                       <div className="flex items-center gap-3">
-                          <Avatar className="h-16 w-16 border-2 border-yellow-400/30 bg-black/50 p-1">
+                          <Avatar className="h-16 w-16 border-2 border-yellow-400/30 bg-black/50 p-1 flex-shrink-0">
                               <AvatarImage src={team.logo} alt={team.name} className="object-contain"/>
                               <AvatarFallback className="bg-transparent text-xs">{team.name.substring(0,3)}</AvatarFallback>
                           </Avatar>
@@ -113,3 +114,4 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
     </div>
   );
 }
+
