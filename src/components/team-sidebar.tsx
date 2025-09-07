@@ -14,7 +14,7 @@ export default function TeamSidebar() {
   const rowVirtualizer = useVirtualizer({
     count: teams.length,
     getScrollElement: () => parentRef.current,
-    itemSize: 68, // Approximate height of each team item (p-2 + avatar + gaps)
+    itemSize: () => 68, // Approximate height of each team item (p-2 + avatar + gaps)
     overscan: 5,
   });
 
