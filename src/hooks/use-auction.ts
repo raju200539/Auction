@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { AuctionStage, Player, PlayerWithId, Team } from '@/types';
@@ -9,6 +10,7 @@ type AuctionContextType = {
   players: PlayerWithId[];
   currentPlayerIndex: number;
   lastTransaction: { teamId: number, player: PlayerWithId & { bidAmount: number } } | null;
+  interstitialMessage: { title: string; description: string } | null;
   setTeams: (teams: Team[]) => void;
   setStage: (stage: AuctionStage) => void;
   setPlayers: (elite: Player[], normal: Player[]) => void;
@@ -18,6 +20,7 @@ type AuctionContextType = {
   startAuction: () => void;
   restartAuction: () => void;
   undoLastAssignment: () => void;
+  clearInterstitial: () => void;
 };
 
 export const AuctionContext = createContext<AuctionContextType | null>(null);

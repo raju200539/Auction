@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuction } from '@/hooks/use-auction';
@@ -6,9 +7,10 @@ import PlayerUpload from '@/components/player-upload';
 import AuctionView from '@/components/auction-view';
 import AuctionSummary from '@/components/auction-summary';
 import { Goal } from 'lucide-react';
+import InterstitialMessage from './interstitial-message';
 
 export function AppContent() {
-  const { stage } = useAuction();
+  const { stage, interstitialMessage, clearInterstitial } = useAuction();
 
   const renderStage = () => {
     switch (stage) {
@@ -17,6 +19,13 @@ export function AppContent() {
       case 'player-upload':
         return <PlayerUpload />;
       case 'auction':
+        if (interstitialMessage) {
+          return <InterstitialMessage 
+                    title={interstitialMessage.title} 
+                    description={interstitialMessage.description}
+                    onContinue={clearInterstitial} 
+                 />;
+        }
         return <AuctionView />;
       case 'summary':
         return <AuctionSummary />;
@@ -25,7 +34,7 @@ export function AppContent() {
     }
   };
 
-  const isAuctionStage = stage === 'auction';
+  const isAuctionStage = stage === 'auction' && !interstitialMessage;
 
   return (
     <div className={`flex flex-col w-full ${isAuctionStage ? 'h-screen' : 'min-h-screen items-center justify-start p-4 md:p-8'}`}>
@@ -37,7 +46,7 @@ export function AppContent() {
           </h1>
         </div>
       </header>
-      <div className={`w-full ${isAuctionStage ? 'flex-grow overflow-hidden' : ''}`}>
+      <div className={`w-full ${isAuctionStage ? 'flex-grow overflow-hidden' : 'flex justify-center items-center'}`}>
         {renderStage()}
       </div>
     </div>
