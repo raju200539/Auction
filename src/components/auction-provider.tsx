@@ -14,33 +14,17 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-const getInitialState = (): AuctionState => {
-  if (typeof window !== 'undefined') {
-    const savedState = localStorage.getItem('auctionState');
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        // Basic validation to make sure it's not a completely invalid state
-        if (parsedState.stage) {
-          return parsedState;
-        }
-      } catch (e) {
-        console.error("Failed to parse state from localStorage", e);
-      }
-    }
-  }
-  return {
-    stage: 'team-setup',
-    teams: [],
-    players: [],
-    currentPlayerIndex: 0,
-    unsoldPlayers: [],
-    lastTransaction: null,
-  };
-}
+const getInitialState = (): AuctionState => ({
+  stage: 'team-setup',
+  teams: [],
+  players: [],
+  currentPlayerIndex: 0,
+  unsoldPlayers: [],
+  lastTransaction: null,
+});
 
 interface AuctionState {
-  stage: AuctionStage;
+  stage: AuctionStage | 'loading';
   teams: Team[];
   players: PlayerWithId[];
   currentPlayerIndex: number;
@@ -49,11 +33,34 @@ interface AuctionState {
 }
 
 export function AuctionProvider({ children }: { children: ReactNode }) {
-  const [auctionState, setAuctionState] = useState<AuctionState>(getInitialState);
+  const [auctionState, setAuctionState] = useState<AuctionState>({ stage: 'loading', teams: [], players: [], currentPlayerIndex: 0, unsoldPlayers: [], lastTransaction: null });
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('auctionState', JSON.stringify(auctionState));
-  }, [auctionState]);
+    const savedState = localStorage.getItem('auctionState');
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        if (parsedState.stage) {
+          setAuctionState(parsedState);
+        } else {
+          setAuctionState(getInitialState());
+        }
+      } catch (e) {
+        console.error("Failed to parse state from localStorage", e);
+        setAuctionState(getInitialState());
+      }
+    } else {
+      setAuctionState(getInitialState());
+    }
+    setIsLoaded(true);
+  }, []);
+  
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('auctionState', JSON.stringify(auctionState));
+    }
+  }, [auctionState, isLoaded]);
 
   const updateState = (updates: Partial<AuctionState>) => {
     setAuctionState(prevState => ({ ...prevState, ...updates }));
@@ -106,44 +113,59 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   };
 
   const skipPlayer = () => {
-    const newUnsold = [
-      ...auctionState.unsoldPlayers,
-      auctionState.players[auctionState.currentPlayerIndex],
-    ];
-    updateState({
-      unsoldPlayers: newUnsold,
-      lastTransaction: null, // Clear last transaction on skip
-      currentPlayerIndex: auctionState.currentPlayerIndex + 1,
-    });
-    checkRoundEnd();
-  };
-  
-  const nextPlayer = () => {
-    updateState({
-      lastTransaction: null,
-      currentPlayerIndex: auctionState.currentPlayerIndex + 1,
-    });
-    checkRoundEnd();
-  };
-  
-  const checkRoundEnd = () => {
     setAuctionState(prevState => {
-      if (prevState.currentPlayerIndex +1 >= prevState.players.length) {
-        if (prevState.unsoldPlayers.length > 0) {
-          const shuffledUnsold = shuffleArray(prevState.unsoldPlayers);
-          return {
-            ...prevState,
+      const newUnsold = [
+        ...prevState.unsoldPlayers,
+        prevState.players[prevState.currentPlayerIndex],
+      ];
+      const nextIndex = prevState.currentPlayerIndex + 1;
+      
+      let newState: Partial<AuctionState> = {
+        unsoldPlayers: newUnsold,
+        lastTransaction: null, // Clear last transaction on skip
+        currentPlayerIndex: nextIndex,
+      };
+
+      if (nextIndex >= prevState.players.length) {
+        if (newUnsold.length > 0) {
+          const shuffledUnsold = shuffleArray(newUnsold);
+          newState = {
+            ...newState,
             players: shuffledUnsold,
             unsoldPlayers: [],
             currentPlayerIndex: 0,
-            lastTransaction: null,
           };
         } else {
-          return { ...prevState, stage: 'summary' };
+          newState = { ...newState, stage: 'summary' };
         }
       }
-      return prevState;
-    })
+      return { ...prevState, ...newState };
+    });
+  };
+  
+  const nextPlayer = () => {
+     setAuctionState(prevState => {
+      const nextIndex = prevState.currentPlayerIndex + 1;
+      let newState: Partial<AuctionState> = { 
+        lastTransaction: null,
+        currentPlayerIndex: nextIndex 
+      };
+
+      if (nextIndex >= prevState.players.length) {
+        if (prevState.unsoldPlayers.length > 0) {
+          const shuffledUnsold = shuffleArray(prevState.unsoldPlayers);
+          newState = {
+            ...newState,
+            players: shuffledUnsold,
+            unsoldPlayers: [],
+            currentPlayerIndex: 0,
+          };
+        } else {
+          newState = { ...newState, stage: 'summary' };
+        }
+      }
+       return { ...prevState, ...newState };
+    });
   };
 
   const undoLastAssignment = () => {
@@ -162,6 +184,7 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
       return team;
     });
     
+    // Put the player back into the auction queue at the current position
     updateState({
       teams: newTeams,
       lastTransaction: null,
@@ -174,21 +197,18 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
 
   const restartAuction = useCallback(() => {
     localStorage.removeItem('auctionState');
-    setAuctionState({
-      stage: 'team-setup',
-      teams: [],
-      players: [],
-      currentPlayerIndex: 0,
-      unsoldPlayers: [],
-      lastTransaction: null,
-    });
+    setAuctionState(getInitialState());
   }, []);
 
+  if (!isLoaded || auctionState.stage === 'loading') {
+    return null; // Or a loading spinner
+  }
 
   return (
     <AuctionContext.Provider
       value={{
         ...auctionState,
+        stage: auctionState.stage as AuctionStage,
         setTeams: handleSetTeams,
         setStage,
         setPlayers: handleSetPlayers,
