@@ -65,9 +65,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   
   return (
     <div className="space-y-2">
-      <Card ref={cardRef}>
-        <CardContent className="p-4">
-            <div className="flex gap-4">
+      <Card>
+        <CardContent className="p-0">
+          <div ref={cardRef} className="p-4 bg-card rounded-lg">
+            <div className="flex gap-4 items-center">
                  <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden border">
                      <Image
                           src={cardImageSrc}
@@ -80,18 +81,19 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                       />
                  </div>
                  <div className="flex flex-col gap-1 flex-grow">
-                     <h3 className="font-bold text-lg">{player.name}</h3>
+                     <h3 className="font-bold text-lg leading-tight">{player.name}</h3>
                      <p className="text-sm text-muted-foreground">{player.position}</p>
-                     <div className="flex items-center gap-2 pt-2">
+                     <div className="flex items-center gap-2 pt-1">
                         <Avatar className="h-6 w-6">
                             <AvatarImage src={player.teamLogo} alt={player.teamName} className="object-cover" />
                             <AvatarFallback>{player.teamName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span className="text-xs font-medium">{player.teamName}</span>
                      </div>
-                     <p className="font-mono text-lg font-semibold text-primary mt-auto">{player.bidAmount.toLocaleString()}</p>
+                     <p className="font-mono text-xl font-semibold text-primary mt-1">{player.bidAmount.toLocaleString()}</p>
                  </div>
             </div>
+          </div>
         </CardContent>
       </Card>
       <Button onClick={downloadCard} variant="outline" className="w-full">
