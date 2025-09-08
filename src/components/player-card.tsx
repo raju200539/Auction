@@ -94,7 +94,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                       <p className="font-body text-primary/80 text-xs uppercase tracking-wider">Sold To:</p>
                       <div className="flex items-center gap-2 mt-1">
                           <Avatar className="h-12 w-12 border-2 border-primary/30 bg-background/50 p-1 flex-shrink-0">
-                              <AvatarImage src={team.logo} alt={team.name} className="object-contain" />
+                              <AvatarImage src={team.logo} alt={team.name} className="object-cover" />
                               <AvatarFallback className="bg-transparent text-xs">{team.name.substring(0, 3)}</AvatarFallback>
                           </Avatar>
                           <p className="font-headline text-xl font-bold text-foreground uppercase tracking-wider">
