@@ -1,15 +1,17 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuction } from '@/hooks/use-auction';
 import { usePastAuctions } from '@/hooks/use-past-auctions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Download, RefreshCw, Trophy, User } from 'lucide-react';
+import { Download, RefreshCw, Trophy, User, Archive } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlayerCard } from './player-card';
+import { PlayerCard, type PlayerCardHandle } from './player-card';
+import JSZip from 'jszip';
+import { useToast } from '@/hooks/use-toast';
 
 const getPlaceholderImageUrl = (position: string, name: string) => {
     const seed = `${position.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
@@ -19,7 +21,13 @@ const getPlaceholderImageUrl = (position: string, name: string) => {
 export default function AuctionSummary({ isPastAuction = false }: { isPastAuction?: boolean}) {
   const { teams, restartAuction } = useAuction();
   const { addPastAuction } = usePastAuctions();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('team-summary');
+  const [isDownloading, setIsDownloading] = useState(false);
+  
+  const playerCardRefs = useRef<(PlayerCardHandle | null)[]>([]);
+
+  const allPlayers = teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount);
 
   useEffect(() => {
     // Only save the auction if this is a new summary, not a view of a past auction.
@@ -83,6 +91,54 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
     document.body.removeChild(link);
   };
   
+  const downloadAllCards = async () => {
+    setIsDownloading(true);
+    toast({
+        title: 'Generating Cards...',
+        description: 'Preparing all player cards for download. This may take a moment.'
+    });
+
+    const zip = new JSZip();
+
+    for (let i = 0; i < allPlayers.length; i++) {
+        const handle = playerCardRefs.current[i];
+        if (handle) {
+            try {
+                const dataUrl = await handle.getImageDataUrl();
+                if (dataUrl) {
+                    const fileName = `${allPlayers[i].name.toLowerCase().replace(/ /g, '_')}_card.png`;
+                    zip.file(fileName, dataUrl.split(',')[1], { base64: true });
+                }
+            } catch (err) {
+                console.error(`Failed to generate card for ${allPlayers[i].name}`, err);
+            }
+        }
+    }
+
+    try {
+        const content = await zip.generateAsync({ type: 'blob' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'player_cards.zip';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({
+            title: 'Download Complete',
+            description: 'All player cards have been downloaded in a zip file.'
+        });
+    } catch (err) {
+        console.error('Failed to generate zip file', err);
+        toast({
+            title: 'Download Failed',
+            description: 'Could not create the zip file. Please try again.',
+            variant: 'destructive'
+        });
+    } finally {
+        setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="flex justify-center items-start w-full">
       <Card className="w-full max-w-7xl">
@@ -120,6 +176,12 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
                 {activeTab === 'player-summary' && (
                   <Button onClick={exportPlayerSummaryToCsv} variant="outline">
                     <Download className="mr-2 h-4 w-4" /> Export Players
+                  </Button>
+                )}
+                {activeTab === 'player-cards' && (
+                  <Button onClick={downloadAllCards} variant="outline" disabled={isDownloading}>
+                    <Archive className="mr-2 h-4 w-4" /> 
+                    {isDownloading ? 'Downloading...' : 'Download All Cards'}
                   </Button>
                 )}
               </div>
@@ -180,12 +242,12 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map(player => (
+                    {allPlayers.map(player => (
                       <TableRow key={player.id}>
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage className="object-cover object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name)} alt={player.name} />
+                                <AvatarImage className="object-contain object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name)} alt={player.name} />
                                 <AvatarFallback>
                                   <User />
                                 </AvatarFallback>
@@ -212,8 +274,13 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
             </TabsContent>
              <TabsContent value="player-cards">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map(player => (
-                        <PlayerCard key={player.id} player={player} team={teams.find(t => t.name === player.teamName)!} />
+                    {allPlayers.map((player, index) => (
+                        <PlayerCard 
+                            key={player.id} 
+                            ref={el => playerCardRefs.current[index] = el}
+                            player={player} 
+                            team={teams.find(t => t.name === player.teamName)!} 
+                        />
                     ))}
                 </div>
             </TabsContent>

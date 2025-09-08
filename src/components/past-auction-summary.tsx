@@ -1,14 +1,16 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Download, Trophy, User } from 'lucide-react';
+import { Download, Trophy, User, Archive } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlayerCard } from './player-card';
+import { PlayerCard, type PlayerCardHandle } from './player-card';
 import type { PastAuction } from '@/types';
+import JSZip from 'jszip';
+import { useToast } from '@/hooks/use-toast';
 
 const getPlaceholderImageUrl = (position: string, name: string) => {
     const seed = `${position.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
@@ -16,8 +18,14 @@ const getPlaceholderImageUrl = (position: string, name: string) => {
 }
 
 export default function PastAuctionSummary({ auction }: { auction: PastAuction }) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('team-summary');
+  const [isDownloading, setIsDownloading] = useState(false);
   const { teams } = auction;
+
+  const playerCardRefs = useRef<(PlayerCardHandle | null)[]>([]);
+  const allPlayers = teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount);
+
 
   const exportTeamSummaryToCsv = () => {
     let csvContent = "";
@@ -36,7 +44,7 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
       csvContent += `\n`; 
     });
 
-    downloadCsv(csvContent, 'team_summary.csv');
+    downloadCsv(csvContent, `team_summary_${auction.id}.csv`);
   };
 
   const exportPlayerSummaryToCsv = () => {
@@ -46,7 +54,7 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
         csvContent += `"${player.name}","${player.position}","${team.name}",${player.bidAmount}\n`;
       });
     });
-    downloadCsv(csvContent, 'player_summary.csv');
+    downloadCsv(csvContent, `player_summary_${auction.id}.csv`);
   };
 
   const downloadCsv = (content: string, fileName: string) => {
@@ -61,6 +69,54 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
     document.body.removeChild(link);
   };
   
+  const downloadAllCards = async () => {
+    setIsDownloading(true);
+    toast({
+        title: 'Generating Cards...',
+        description: 'Preparing all player cards for download. This may take a moment.'
+    });
+
+    const zip = new JSZip();
+
+    for (let i = 0; i < allPlayers.length; i++) {
+        const handle = playerCardRefs.current[i];
+        if (handle) {
+            try {
+                const dataUrl = await handle.getImageDataUrl();
+                if (dataUrl) {
+                    const fileName = `${allPlayers[i].name.toLowerCase().replace(/ /g, '_')}_card.png`;
+                    zip.file(fileName, dataUrl.split(',')[1], { base64: true });
+                }
+            } catch (err) {
+                console.error(`Failed to generate card for ${allPlayers[i].name}`, err);
+            }
+        }
+    }
+
+    try {
+        const content = await zip.generateAsync({ type: 'blob' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `player_cards_${auction.id}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({
+            title: 'Download Complete',
+            description: 'All player cards have been downloaded in a zip file.'
+        });
+    } catch (err) {
+        console.error('Failed to generate zip file', err);
+        toast({
+            title: 'Download Failed',
+            description: 'Could not create the zip file. Please try again.',
+            variant: 'destructive'
+        });
+    } finally {
+        setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="flex justify-center items-start w-full">
       <Card className="w-full max-w-7xl">
@@ -91,6 +147,12 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
                 {activeTab === 'player-summary' && (
                   <Button onClick={exportPlayerSummaryToCsv} variant="outline">
                     <Download className="mr-2 h-4 w-4" /> Export Players
+                  </Button>
+                )}
+                 {activeTab === 'player-cards' && (
+                  <Button onClick={downloadAllCards} variant="outline" disabled={isDownloading}>
+                    <Archive className="mr-2 h-4 w-4" /> 
+                    {isDownloading ? 'Downloading...' : 'Download All Cards'}
                   </Button>
                 )}
               </div>
@@ -151,12 +213,12 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player) => (
-                      <TableRow key={player.id}>
+                    {allPlayers.map((player, index) => (
+                      <TableRow key={`${player.id}-${index}`}>
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage className="object-cover object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name)} alt={player.name} />
+                                <AvatarImage className="object-contain object-top" src={player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name)} alt={player.name} />
                                 <AvatarFallback>
                                   <User />
                                 </AvatarFallback>
@@ -183,8 +245,13 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
             </TabsContent>
              <TabsContent value="player-cards">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player) => (
-                        <PlayerCard key={player.id} player={player} team={teams.find(t => t.name === player.teamName)!} />
+                    {allPlayers.map((player, index) => (
+                        <PlayerCard 
+                            key={`${player.id}-${index}`} 
+                            ref={el => playerCardRefs.current[index] = el}
+                            player={player} 
+                            team={teams.find(t => t.name === player.teamName)!} 
+                        />
                     ))}
                 </div>
             </TabsContent>
