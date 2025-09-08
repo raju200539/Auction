@@ -86,17 +86,8 @@ export function AuctionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setStage = useCallback((stage: AuctionStage) => {
-    if (stage === 'summary' && auctionState.teams.length > 0) {
-        const currentAuctionId = new Date().toISOString();
-        const pastAuctionData = {
-          id: currentAuctionId,
-          date: currentAuctionId,
-          teams: auctionState.teams
-        };
-        addPastAuction(pastAuctionData);
-    }
     updateState({ stage });
-  }, [auctionState.teams, addPastAuction]);
+  }, []);
 
 
   const handleSetPlayers = useCallback((elite: Player[], normal: Player[]) => {

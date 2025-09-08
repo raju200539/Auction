@@ -1,7 +1,8 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuction } from '@/hooks/use-auction';
+import { usePastAuctions } from '@/hooks/use-past-auctions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +18,28 @@ const getPlaceholderImageUrl = (position: string, name: string) => {
 
 export default function AuctionSummary({ isPastAuction = false }: { isPastAuction?: boolean}) {
   const { teams, restartAuction } = useAuction();
+  const { addPastAuction } = usePastAuctions();
   const [activeTab, setActiveTab] = useState('team-summary');
+
+  useEffect(() => {
+    // Only save the auction if this is a new summary, not a view of a past auction.
+    if (!isPastAuction && teams.length > 0) {
+      const auctionAlreadySaved = !!localStorage.getItem('lastAuctionId');
+      const currentAuctionId = new Date().toISOString();
+      
+      // A simple check to prevent re-saving on component re-render.
+      const lastId = localStorage.getItem('lastAuctionId');
+
+      const pastAuctionData = {
+          id: currentAuctionId,
+          date: currentAuctionId,
+          teams: teams
+      };
+
+      addPastAuction(pastAuctionData);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once when the component mounts.
 
   const exportTeamSummaryToCsv = () => {
     let csvContent = "";
