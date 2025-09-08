@@ -26,10 +26,8 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
     if (!isPastAuction && teams.length > 0) {
       const currentAuctionId = `${new Date().toISOString()}-${Math.random()}`;
       
-      // A simple check to prevent re-saving on component re-render.
       const lastId = localStorage.getItem('lastAuctionId');
-      if(lastId === currentAuctionId) return;
-
+      if (lastId === currentAuctionId) return;
 
       const pastAuctionData = {
           id: currentAuctionId,
