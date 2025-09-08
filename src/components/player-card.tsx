@@ -58,7 +58,7 @@ export function PlayerCard({ player, team }: PlayerCardProps) {
                                 src={cardImageSrc}
                                 alt={player.name}
                                 fill
-                                className="object-cover object-center"
+                                className="object-contain object-center"
                                 unoptimized
                                 crossOrigin="anonymous"
                                 data-ai-hint="player photo"
