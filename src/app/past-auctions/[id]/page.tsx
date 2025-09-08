@@ -49,7 +49,7 @@ function PastAuctionDetail({ id }: { id: string }) {
                 </Button>
             </header>
             <main className="w-full">
-                 <PastAuctionSummary auction={auction} />
+                 <PastAuctionSummary key={auction.id} auction={auction} />
             </main>
         </div>
     )

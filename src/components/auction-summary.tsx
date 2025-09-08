@@ -24,19 +24,21 @@ export default function AuctionSummary({ isPastAuction = false }: { isPastAuctio
   useEffect(() => {
     // Only save the auction if this is a new summary, not a view of a past auction.
     if (!isPastAuction && teams.length > 0) {
-      const auctionAlreadySaved = !!localStorage.getItem('lastAuctionId');
-      const currentAuctionId = new Date().toISOString();
+      const currentAuctionId = `${new Date().toISOString()}-${Math.random()}`;
       
       // A simple check to prevent re-saving on component re-render.
       const lastId = localStorage.getItem('lastAuctionId');
+      if(lastId === currentAuctionId) return;
+
 
       const pastAuctionData = {
           id: currentAuctionId,
-          date: currentAuctionId,
+          date: new Date().toISOString(),
           teams: teams
       };
 
       addPastAuction(pastAuctionData);
+      localStorage.setItem('lastAuctionId', currentAuctionId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once when the component mounts.

@@ -39,8 +39,8 @@ export default function PastAuctionsPage() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {pastAuctions.map((auction, index) => (
-                                    <div key={`${auction.id}-${index}`} className="flex items-center justify-between p-4 border rounded-lg">
+                                {pastAuctions.map((auction) => (
+                                    <div key={auction.id} className="flex items-center justify-between p-4 border rounded-lg">
                                         <div>
                                             <p className="font-semibold">Auction from {new Date(auction.date).toLocaleString()}</p>
                                             <p className="text-sm text-muted-foreground">{auction.teams.length} teams, {auction.teams.reduce((acc, t) => acc + t.players.length, 0)} players sold</p>

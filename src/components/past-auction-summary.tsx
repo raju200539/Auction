@@ -107,7 +107,7 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.map((team, teamIndex) => {
+                    {teams.map((team) => {
                       const totalSpent = team.initialPurse - team.purse;
                       return (
                         <TableRow key={team.id}>
@@ -124,8 +124,8 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
                           <TableCell className="text-right font-mono">{team.purse.toLocaleString()}</TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1 text-sm">
-                              {team.players.map((player, playerIndex) => (
-                                <div key={`${team.id}-${player.id}-${playerIndex}`}>
+                              {team.players.map((player) => (
+                                <div key={player.id}>
                                   {player.name} - <span className="text-muted-foreground">{player.bidAmount.toLocaleString()}</span>
                                 </div>
                               ))}
@@ -151,8 +151,8 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player, index) => (
-                      <TableRow key={`${player.id}-${index}`}>
+                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player) => (
+                      <TableRow key={player.id}>
                         <TableCell className="font-medium">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
@@ -183,8 +183,8 @@ export default function PastAuctionSummary({ auction }: { auction: PastAuction }
             </TabsContent>
              <TabsContent value="player-cards">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player, index) => (
-                        <PlayerCard key={`${player.id}-${index}`} player={player} team={teams.find(t => t.name === player.teamName)!} />
+                    {teams.flatMap(team => team.players.map(player => ({...player, teamName: team.name, teamLogo: team.logo}))).sort((a,b) => b.bidAmount - a.bidAmount).map((player) => (
+                        <PlayerCard key={player.id} player={player} team={teams.find(t => t.name === player.teamName)!} />
                     ))}
                 </div>
             </TabsContent>
