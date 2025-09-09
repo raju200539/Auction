@@ -1,9 +1,9 @@
+
 'use client';
 
 import { useRef, useImperativeHandle, forwardRef } from 'react';
 import type { Player, Team } from '@/types';
 import { toPng } from 'html-to-image';
-import Image from 'next/image';
 import { Button } from './ui/button';
 import { Download, User } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
@@ -37,13 +37,14 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
+      // By using a standard <img> tag with a cache-busting URL, we can rely on default fetch behavior.
       return await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
+        // Ensure images are re-fetched for the capture
         fetchRequestInit: {
-            // This is the crucial part to bust the cache for all images.
-            cache: 'no-cache' 
-        }
+          cache: 'no-store',
+        },
       });
     } catch (err) {
       console.error('Failed to generate player card image', err);
@@ -87,16 +88,13 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                     className="relative w-full h-full bg-transparent"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Image
-                            key={cardImageSrc} // Force re-render when src changes
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        {/* Using a standard <img> tag for more reliable CSS control with clip-path */}
+                        <img
                             src={cardImageSrc}
                             alt={player.name}
-                            width={300}
-                            height={400}
-                            className="object-contain w-full h-full"
-                            unoptimized
                             crossOrigin="anonymous"
+                            className="w-full h-full object-contain"
                             data-ai-hint="player photo"
                         />
                     </div>
