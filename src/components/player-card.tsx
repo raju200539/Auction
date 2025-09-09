@@ -28,9 +28,8 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Add a unique query param to bust the cache. This is the key fix.
   const cardImageSrc = player.photoUrl 
-    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${Math.random()}` 
+    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${new Date().getTime()}` 
     : getPlaceholderImageUrl(player.position, player.name);
 
   const getImageDataUrl = async (): Promise<string | null> => {
@@ -41,8 +40,6 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return await toPng(cardRef.current, { 
         cacheBust: true, 
         pixelRatio: 2,
-        // While cacheBust is useful, the direct URL change is more reliable
-        // for bypassing aggressive browser caching of the underlying <img> tag.
         fetchRequestInit: {
           cache: 'no-store'
         }
@@ -77,16 +74,16 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
     <div className="space-y-2">
       <div 
         ref={cardRef} 
-        className="bg-[#1a1a1a] text-white aspect-[3/4.2] rounded-xl overflow-hidden relative shadow-2xl border border-yellow-400/20 w-full max-w-sm mx-auto flex flex-col"
+        className="bg-[#1a1a1a] text-white aspect-[3/4.2] rounded-xl overflow-hidden relative shadow-2xl border-2 border-yellow-400/20 w-full max-w-sm mx-auto flex flex-col"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}
       >
-        <div className='flex-grow flex p-3 gap-2'>
+        <div className='flex-grow flex p-3 gap-2 min-h-0'>
             {/* Left Column - Image */}
             <div className='w-[40%] h-full flex flex-col'>
                  <div 
-                    className="relative w-full h-full bg-black/30" 
+                    className="relative w-full h-full bg-gray-200" 
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
                     <Image
