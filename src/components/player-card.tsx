@@ -28,8 +28,8 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const cardImageSrc = player.photoUrl 
-    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${new Date().getTime()}` 
+  const cardImageSrc = player.photoUrl
+    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${new Date().getTime()}`
     : getPlaceholderImageUrl(player.position, player.name);
 
   const getImageDataUrl = async (): Promise<string | null> => {
@@ -37,11 +37,12 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
-      return await toPng(cardRef.current, { 
-        cacheBust: true, 
+      return await toPng(cardRef.current, {
+        cacheBust: true,
         pixelRatio: 2,
         fetchRequestInit: {
-          cache: 'no-store'
+            // This is the crucial part to bust the cache for all images.
+            cache: 'no-cache' 
         }
       });
     } catch (err) {
@@ -53,7 +54,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   useImperativeHandle(ref, () => ({
     getImageDataUrl,
   }));
-  
+
   const downloadCard = async () => {
     const dataUrl = await getImageDataUrl();
      if (dataUrl) {
@@ -69,11 +70,11 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
         });
     }
   };
-  
+
   return (
     <div className="space-y-2">
-      <div 
-        ref={cardRef} 
+      <div
+        ref={cardRef}
         className="bg-[#1a1a1a] text-white aspect-[3/4.2] rounded-xl overflow-hidden relative shadow-2xl border-2 border-yellow-400/20 w-full max-w-sm mx-auto flex flex-col"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -81,9 +82,9 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       >
         <div className='flex-grow flex p-3 gap-2 min-h-0'>
             {/* Left Column - Image */}
-            <div className='w-[40%] h-full flex flex-col'>
-                 <div 
-                    className="relative w-full h-full bg-gray-200" 
+            <div className='w-[45%] h-full flex flex-col'>
+                 <div
+                    className="relative w-full h-full bg-gray-200"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
                     <Image
@@ -100,32 +101,32 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                 </div>
             </div>
             {/* Right Column - Details */}
-            <div className='w-[60%] h-full flex flex-col justify-center items-start text-left p-2 space-y-4'>
+            <div className='w-[55%] h-full flex flex-col justify-center items-start text-left p-2 space-y-4'>
                 <div>
-                  <h3 className="font-headline text-xl font-bold tracking-wider uppercase text-white" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)'}}>
+                  <h3 className="font-headline text-2xl font-bold tracking-wider uppercase text-white" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)'}}>
                       {player.name}
                   </h3>
-                   <p className="font-headline text-base text-yellow-300 font-semibold tracking-widest uppercase">
+                   <p className="font-headline text-lg text-yellow-300 font-semibold tracking-widest uppercase">
                       {player.position}
                   </p>
                 </div>
 
                 <div className="w-full border-b border-yellow-400/20 my-1"></div>
-                
+
                  <div>
-                    <p className="text-xs uppercase text-yellow-400/70 tracking-widest">Sold To:</p>
+                    <p className="text-sm uppercase text-yellow-400/70 tracking-widest">Sold To:</p>
                     <div className="flex items-center gap-2 mt-1">
-                        <Avatar className="h-6 w-6 border border-yellow-400/50">
+                        <Avatar className="h-8 w-8 border border-yellow-400/50">
                             <AvatarImage src={player.teamLogo} alt={player.teamName} className="object-cover" />
                             <AvatarFallback>{player.teamName.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-sm">{player.teamName}</span>
+                        <span className="font-semibold text-base">{player.teamName}</span>
                     </div>
                 </div>
-                
+
                  <div>
-                    <p className="text-xs uppercase text-yellow-400/70 tracking-widest">Final Bid Amount</p>
-                    <p className="font-mono text-2xl font-bold text-white mt-1">
+                    <p className="text-sm uppercase text-yellow-400/70 tracking-widest">Final Bid Amount</p>
+                    <p className="font-mono text-3xl font-bold text-white mt-1">
                         <span className="font-sans">₹</span>{player.bidAmount.toLocaleString()}
                     </p>
                 </div>
@@ -133,8 +134,8 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
         </div>
 
         {/* Footer - Position */}
-        <div className="flex-shrink-0 bg-black/80 p-2 border-t-2 border-yellow-400/50 flex items-center justify-center rounded-b-lg">
-             <p className="font-headline text-lg text-yellow-300 font-bold tracking-widest uppercase">
+        <div className="flex-shrink-0 bg-black/80 p-3 border-t-2 border-yellow-400/50 flex items-center justify-center rounded-b-lg">
+             <p className="font-headline text-xl text-yellow-300 font-bold tracking-widest uppercase">
                   {player.position}
               </p>
         </div>
