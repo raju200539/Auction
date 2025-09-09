@@ -29,7 +29,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const cardImageSrc = player.photoUrl ? `/api/image?url=${encodeURIComponent(player.photoUrl)}` : getPlaceholderImageUrl(player.position, player.name);
+  // Add a unique query param to bust the cache. This is the key fix.
+  const cardImageSrc = player.photoUrl 
+    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${Math.random()}` 
+    : getPlaceholderImageUrl(player.position, player.name);
 
   const getImageDataUrl = async (): Promise<string | null> => {
      if (cardRef.current === null) {
@@ -39,8 +42,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return await toPng(cardRef.current, { 
         cacheBust: true, 
         pixelRatio: 2,
+        // While cacheBust is useful, the direct URL change is more reliable
+        // for bypassing aggressive browser caching of the underlying <img> tag.
         fetchRequestInit: {
-          cache: 'no-cache'
+          cache: 'no-store'
         }
       });
     } catch (err) {
@@ -86,6 +91,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
                     <Image
+                        key={cardImageSrc} // Force re-render when src changes
                         src={cardImageSrc}
                         alt={player.name}
                         fill
