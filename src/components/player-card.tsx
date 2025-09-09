@@ -84,19 +84,22 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
             {/* Left Column - Image */}
             <div className='w-[45%] h-full flex flex-col'>
                  <div
-                    className="relative w-full h-full bg-gray-200"
+                    className="relative w-full h-full bg-transparent"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
-                    <Image
-                        key={cardImageSrc} // Force re-render when src changes
-                        src={cardImageSrc}
-                        alt={player.name}
-                        fill
-                        className="object-contain object-center"
-                        unoptimized
-                        crossOrigin="anonymous"
-                        data-ai-hint="player photo"
-                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Image
+                            key={cardImageSrc} // Force re-render when src changes
+                            src={cardImageSrc}
+                            alt={player.name}
+                            width={300}
+                            height={400}
+                            className="object-contain w-full h-full"
+                            unoptimized
+                            crossOrigin="anonymous"
+                            data-ai-hint="player photo"
+                        />
+                    </div>
                      <div className="absolute inset-0 border-2 border-yellow-400/80" style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}></div>
                 </div>
             </div>
