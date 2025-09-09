@@ -36,7 +36,13 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
-      return await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+      return await toPng(cardRef.current, { 
+        cacheBust: true, 
+        pixelRatio: 2,
+        fetchRequestInit: {
+          cache: 'no-cache'
+        }
+      });
     } catch (err) {
       console.error('Failed to generate player card image', err);
       return null;
@@ -83,7 +89,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                         src={cardImageSrc}
                         alt={player.name}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         unoptimized
                         crossOrigin="anonymous"
                         data-ai-hint="player photo"
