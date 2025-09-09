@@ -92,7 +92,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                         src={cardImageSrc}
                         alt={player.name}
                         fill
-                        className="object-contain"
+                        className="object-contain object-center"
                         unoptimized
                         crossOrigin="anonymous"
                         data-ai-hint="player photo"
