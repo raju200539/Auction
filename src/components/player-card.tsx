@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRef, useImperativeHandle, forwardRef } from 'react';
@@ -37,13 +36,40 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
-      return await toPng(cardRef.current, {
+      // Temporarily set the image source to a data URL to avoid CORS issues in html-to-image
+      const originalImage = cardRef.current.querySelector('img');
+      let originalSrc = originalImage?.src;
+      
+      if (originalImage && originalSrc && !originalSrc.startsWith('data:')) {
+        const response = await fetch(originalSrc);
+        const blob = await response.blob();
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        originalImage.src = dataUrl;
+      }
+
+      const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        // The cross-origin attribute on the img tag is crucial for this to work
       });
+
+      // Restore original image source if it was changed
+      if(originalImage && originalSrc) {
+        originalImage.src = originalSrc;
+      }
+
+      return dataUrl;
+
     } catch (err) {
       console.error('Failed to generate player card image', err);
+      toast({
+            title: 'Download Failed',
+            description: 'Could not create the card image. The player photo might be inaccessible.',
+            variant: 'destructive'
+        });
       return null;
     }
   }
@@ -59,12 +85,6 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
         link.download = `${player.name.toLowerCase().replace(/ /g, '_')}_card.png`;
         link.href = dataUrl;
         link.click();
-    } else {
-        toast({
-            title: 'Download Failed',
-            description: 'Could not create the card image. The player photo might be inaccessible.',
-            variant: 'destructive'
-        });
     }
   };
 
@@ -81,18 +101,16 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
             {/* Left Column - Image */}
             <div className='w-[45%] h-full flex flex-col'>
                  <div
-                    className="relative w-full h-full bg-gray-200"
+                    className="relative w-full h-full bg-gray-200 flex items-center justify-center"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <img
-                            src={cardImageSrc}
-                            alt={player.name}
-                            crossOrigin="anonymous"
-                            className="w-full h-full object-contain"
-                            data-ai-hint="player photo"
-                        />
-                    </div>
+                    <img
+                        src={cardImageSrc}
+                        alt={player.name}
+                        crossOrigin="anonymous"
+                        className="w-full h-full object-contain object-center"
+                        data-ai-hint="player photo"
+                    />
                      <div className="absolute inset-0 border-2 border-yellow-400/80" style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}></div>
                 </div>
             </div>
