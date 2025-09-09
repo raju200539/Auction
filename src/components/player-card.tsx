@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useImperativeHandle, forwardRef } from 'react';
@@ -27,8 +28,9 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Add a random query string to bust the cache when downloading
   const cardImageSrc = player.photoUrl
-    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}`
+    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${Date.now()}`
     : getPlaceholderImageUrl(player.position, player.name);
 
   const getImageDataUrl = async (): Promise<string | null> => {
@@ -37,10 +39,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
     }
     try {
       const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
+        cacheBust: true, // This helps with caching issues
         pixelRatio: 2,
         fetchRequestInit: {
-          cache: 'no-cache'
+          cache: 'no-cache' // Explicitly disable caching for fetches
         }
       });
 
@@ -71,13 +73,16 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
     }
   };
 
+  const teamColor = team.color || '#d4af37'; // Default to gold if no color
+
   return (
     <div className="space-y-2">
       <div
         ref={cardRef}
-        className="bg-[#1a1a1a] text-white aspect-[3/4.2] rounded-xl overflow-hidden relative shadow-2xl border-2 border-yellow-400/20 w-full max-w-sm mx-auto flex flex-col"
+        className="bg-[#1a1a1a] text-white aspect-[3/4.2] rounded-xl overflow-hidden relative shadow-2xl border-2 w-full max-w-sm mx-auto flex flex-col"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          borderColor: `${teamColor}33`, // 20% opacity
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23${teamColor.substring(1)}' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}
       >
         <div className='flex-grow flex p-3 gap-2 min-h-0'>
@@ -94,7 +99,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                         className="w-full h-full object-cover object-center"
                         data-ai-hint="player photo"
                     />
-                     <div className="absolute inset-0 border-2 border-yellow-400/80" style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}></div>
+                     <div className="absolute inset-0 border-2" style={{ borderColor: `${teamColor}CC`, clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}></div>
                 </div>
             </div>
             {/* Right Column - Details */}
@@ -103,17 +108,17 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                   <h3 className="font-headline text-2xl font-bold tracking-wider uppercase text-white" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)'}}>
                       {player.name}
                   </h3>
-                   <p className="font-headline text-lg text-yellow-300 font-semibold tracking-widest uppercase">
+                   <p className="font-headline text-lg font-semibold tracking-widest uppercase" style={{ color: teamColor }}>
                       {player.position}
                   </p>
                 </div>
 
-                <div className="w-full border-b border-yellow-400/20 my-1"></div>
+                <div className="w-full border-b" style={{ borderColor: `${teamColor}33`}}></div>
 
                  <div>
-                    <p className="text-sm uppercase text-yellow-400/70 tracking-widest">Sold To:</p>
+                    <p className="text-sm uppercase tracking-widest" style={{ color: `${teamColor}B3`}}>Sold To:</p>
                     <div className="flex items-center gap-2 mt-1">
-                        <Avatar className="h-8 w-8 border border-yellow-400/50">
+                        <Avatar className="h-8 w-8 border" style={{ borderColor: `${teamColor}80`}}>
                             <AvatarImage src={player.teamLogo} alt={player.teamName} className="object-cover" />
                             <AvatarFallback>{player.teamName.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -122,7 +127,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
                 </div>
 
                  <div>
-                    <p className="text-sm uppercase text-yellow-400/70 tracking-widest">Final Bid Amount</p>
+                    <p className="text-sm uppercase tracking-widest" style={{ color: `${teamColor}B3`}}>Final Bid Amount</p>
                     <p className="font-mono text-3xl font-bold text-white mt-1">
                         <span className="font-sans">₹</span>{player.bidAmount.toLocaleString()}
                     </p>
@@ -131,8 +136,8 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
         </div>
 
         {/* Footer - Position */}
-        <div className="flex-shrink-0 bg-black/80 p-3 border-t-2 border-yellow-400/50 flex items-center justify-center rounded-b-lg">
-             <p className="font-headline text-xl text-yellow-300 font-bold tracking-widest uppercase">
+        <div className="flex-shrink-0 bg-black/80 p-3 border-t-2 flex items-center justify-center rounded-b-lg" style={{ borderColor: `${teamColor}80`}}>
+             <p className="font-headline text-xl font-bold tracking-widest uppercase" style={{ color: teamColor }}>
                   {player.position}
               </p>
         </div>
