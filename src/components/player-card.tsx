@@ -28,7 +28,7 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
   const { toast } = useToast();
 
   const cardImageSrc = player.photoUrl
-    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}&v=${new Date().getTime()}`
+    ? `/api/image?url=${encodeURIComponent(player.photoUrl)}`
     : getPlaceholderImageUrl(player.position, player.name);
 
   const getImageDataUrl = async (): Promise<string | null> => {
@@ -36,30 +36,13 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
-      // Temporarily set the image source to a data URL to avoid CORS issues in html-to-image
-      const originalImage = cardRef.current.querySelector('img');
-      let originalSrc = originalImage?.src;
-      
-      if (originalImage && originalSrc && !originalSrc.startsWith('data:')) {
-        const response = await fetch(originalSrc);
-        const blob = await response.blob();
-        const dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-        originalImage.src = dataUrl;
-      }
-
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
+        fetchRequestInit: {
+          cache: 'no-cache'
+        }
       });
-
-      // Restore original image source if it was changed
-      if(originalImage && originalSrc) {
-        originalImage.src = originalSrc;
-      }
 
       return dataUrl;
 
@@ -101,14 +84,14 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
             {/* Left Column - Image */}
             <div className='w-[45%] h-full flex flex-col'>
                  <div
-                    className="relative w-full h-full bg-gray-200 flex items-center justify-center"
+                    className="relative w-full h-full bg-transparent flex items-center justify-center"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
                     <img
                         src={cardImageSrc}
                         alt={player.name}
                         crossOrigin="anonymous"
-                        className="w-full h-full object-contain object-center"
+                        className="w-full h-full object-cover object-center"
                         data-ai-hint="player photo"
                     />
                      <div className="absolute inset-0 border-2 border-yellow-400/80" style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}></div>
