@@ -37,14 +37,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
       return null;
     }
     try {
-      // By using a standard <img> tag with a cache-busting URL, we can rely on default fetch behavior.
       return await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        // Ensure images are re-fetched for the capture
-        fetchRequestInit: {
-          cache: 'no-store',
-        },
+        // The cross-origin attribute on the img tag is crucial for this to work
       });
     } catch (err) {
       console.error('Failed to generate player card image', err);
@@ -85,11 +81,10 @@ export const PlayerCard = forwardRef<PlayerCardHandle, PlayerCardProps>(({ playe
             {/* Left Column - Image */}
             <div className='w-[45%] h-full flex flex-col'>
                  <div
-                    className="relative w-full h-full bg-transparent"
+                    className="relative w-full h-full bg-gray-200"
                     style={{ clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0% 100%)' }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        {/* Using a standard <img> tag for more reliable CSS control with clip-path */}
+                    <div className="absolute inset-0 flex items-center justify-center">
                         <img
                             src={cardImageSrc}
                             alt={player.name}
